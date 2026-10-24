@@ -316,12 +316,21 @@ function prepare(string $src, string $mime): string {
     return strip_gps($out);
 }
 
-// Location stays in Nextcloud only: remove every GPS tag from the copy sent to Lychee, then check
+// Location stays in Nextcloud only: remove every GPS tag from the copy sent to Lychee, then check.
+// The trailer goes too: Samsung appends a depth map and a second image with its own EXIF (GPS included).
 function strip_gps(string $f): string {
-    [$rc, , $err] = run(['exiftool', '-q', '-q', '-m', '-overwrite_original', '-gps:all=', '-xmp:GPS*=',
-        '-Keys:GPSCoordinates=', '-ItemList:GPSCoordinates=', '-UserData:GPSCoordinates=', $f]);
-    if ($rc !== 0) throw new RuntimeException("removing GPS failed: $err");
-    [, $left] = run(['exiftool', '-q', '-q', '-m', '-s3', '-n', '-GPSLatitude', '-GPSCoordinates', '-GPSPosition', $f]);
+    $base = ['exiftool', '-q', '-q', '-m', '-overwrite_original'];
+    $drop = ['-gps:all=', '-xmp:GPS*=', '-Keys:GPSCoordinates=', '-ItemList:GPSCoordinates=', '-UserData:GPSCoordinates=',
+        '-trailer:all='];
+    [$rc, , $err] = run(array_merge($base, $drop, [$f]));
+    if ($rc !== 0) {
+        // Damaged metadata (e.g. a broken preview pointer): rebuild it from the file itself, then remove again
+        [$rc, , $err] = run(array_merge($base, ['-all=', '-tagsfromfile', '@', '-all:all', '-icc_profile', $f]));
+        if ($rc === 0) [$rc, , $err] = run(array_merge($base, $drop, [$f]));
+        if ($rc !== 0) throw new RuntimeException("removing GPS failed: $err");
+    }
+    // -ee3: also look inside embedded images and documents
+    [, $left] = run(['exiftool', '-q', '-q', '-m', '-ee3', '-s3', '-n', '-GPSLatitude', '-GPSCoordinates', '-GPSPosition', $f]);
     if (trim($left) !== '') throw new RuntimeException('GPS still present after removal');
     return $f;
 }
