@@ -80,7 +80,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 1 4 * * *
+                schedule: 19 3 * * *
       downloads:
         enabled: true
         path: /mnt/main/Media/temp
