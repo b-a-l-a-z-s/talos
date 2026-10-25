@@ -57,7 +57,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 58 2 * * *       
+                schedule: 2 2 * * *
     workload:
       exportarr:
         enabled: false
