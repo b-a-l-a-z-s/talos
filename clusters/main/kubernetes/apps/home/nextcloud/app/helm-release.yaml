@@ -168,7 +168,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 48 1 * * *
+                schedule: 19 4 * * *
       config:  
         volsync:
           - name: b2
@@ -179,7 +179,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 55 1 * * *
+                schedule: 26 4 * * *
       data:
         enabled: true
         type: nfs
@@ -205,7 +205,7 @@ spec:
           credentials: s3
           scheduledBackups:
             - name: daily-backup
-              schedule: "0 2 2 * * *"
+              schedule: "0 33 4 * * *"
               backupOwnerReference: self
               immediate: true
               suspend: false
