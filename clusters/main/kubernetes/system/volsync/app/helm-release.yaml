@@ -4,7 +4,7 @@ metadata:
   name: volsync
   namespace: volsync
 spec:
-  interval: 5m
+  interval: 1h
   chart:
     spec:
       chart: volsync
@@ -13,14 +13,6 @@ spec:
         kind: HelmRepository
         name: truecharts
         namespace: flux-system
-      interval: 5m
-  install:
-    createNamespace: true
-    remediation:
-      retries: 3
-  upgrade:
-    remediation:
-      retries: 3
   values:
     configmap:
       dashboard-volsync:
