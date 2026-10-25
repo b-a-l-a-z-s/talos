@@ -6,3 +6,5 @@ resources:
   - networkpolicy.yaml
   - secret.yaml
   - namespace.yaml
+components:
+  - ../../../../../components/backup/credentials
