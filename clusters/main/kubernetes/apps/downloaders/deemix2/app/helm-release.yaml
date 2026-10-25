@@ -68,7 +68,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 49 23 * * *
+                schedule: 14 23 * * *
       data:
         enabled: false
       downloads:
