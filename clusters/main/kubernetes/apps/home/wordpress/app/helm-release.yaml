@@ -138,7 +138,7 @@ spec:
               enabled: true
               trigger:
                 # Free slot after Plex at the end of the nightly chain (UTC, 7 minutes apart)
-                schedule: 52 4 * * *
+                schedule: 5 3 * * *
     mariadb:
       # The sub-chart doesn't see the parent's credentials, so it gets its own copy
       credentials:
@@ -156,7 +156,7 @@ spec:
                 enabled: true
                 trigger:
                   # 05:05 is qbittorrent's (disabled) slot; keep 7 minutes from it
-                  schedule: 12 5 * * *
+                  schedule: 12 3 * * *
     ingress:
       main:
         enabled: true
