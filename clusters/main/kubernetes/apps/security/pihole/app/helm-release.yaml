@@ -64,7 +64,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 30 2 * * *  
+                schedule: 34 1 * * *
       dnsmasq:
         volsync:
           - name: b2
@@ -75,7 +75,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 37 2 * * *
+                schedule: 41 1 * * *
     workload:
       main:
         podSpec:
