@@ -14,3 +14,5 @@ configMapGenerator:
       - sync.php
 generatorOptions:
   disableNameSuffixHash: true
+components:
+  - ../../../../../components/backup/credentials
