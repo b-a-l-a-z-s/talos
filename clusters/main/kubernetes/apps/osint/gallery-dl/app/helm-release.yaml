@@ -97,7 +97,7 @@ spec:
               args:
                 - >-
                   pip install -q --disable-pip-version-check --target /tmp/pkgs instaloader==4.16rc1
-                  && python /scripts/instaloader.py
+                  && python /scripts/run.py
               env:
                 HOME: /tmp
                 PYTHONPATH: /tmp/pkgs
@@ -117,7 +117,7 @@ spec:
       instaloader:
         enabled: true
         data:
-          instaloader.py: |
+          run.py: |
             import json, os, sys, time
             import instaloader
             from instaloader import FrozenNodeIterator, Profile, resumable_iteration
