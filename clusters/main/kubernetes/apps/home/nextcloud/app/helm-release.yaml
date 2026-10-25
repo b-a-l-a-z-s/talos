@@ -79,7 +79,7 @@ spec:
       previews:
         imaginary: false
         schedule: "*/15 * * * *"
-        providers: [PNG, JPEG, GIF, BMP, HEIC, TIFF, Movie, MKV, MP4, AVI]
+        providers: [Image, HEIC, TIFF, Movie, MKV, MP4, AVI]
       #  max_memory: 5120
       #  max_file_size_image: 100
       collabora:
