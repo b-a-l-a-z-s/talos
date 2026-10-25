@@ -215,6 +215,19 @@ CHART_VERSION="$RESOLVED_CHART_VERSION"
 CHART_REF="$RESOLVED_CHART_REF"
 REPO_URL="$RESOLVED_REPO_URL"
 APP_DIR="$(dirname "$HELMRELEASE_PATH")"
+# Values and Secrets as Flux applies them: the app dir rendered by kustomize (components add Secrets and patches)
+RENDERED="$(mktemp)"
+HR_DOC="$HELMRELEASE_PATH"
+if [[ -f "$APP_DIR/kustomization.yaml" ]]; then
+  if ! kubectl kustomize "$APP_DIR" > "$RENDERED"; then
+    echo -e "${RED}✖ kustomize build of $APP_DIR failed${NC}"
+    exit 1
+  fi
+  HR_DOC="$(mktemp)"
+  yq "select(.kind == \"HelmRelease\" and .metadata.name == \"$RELEASE_NAME\")" "$RENDERED" > "$HR_DOC"
+else
+  cat "$APP_DIR"/*.yaml > "$RENDERED"
+fi
 #CI_VALUES_FILE="$APP_DIR/ci/ci-values.yaml"
 CI_VALUES_FILE="ci/$CHART_NAME.yaml"
 
@@ -238,21 +251,21 @@ RAW_VALUES="$(mktemp)"
 VALUES_FILE="$(mktemp)"
 
 # Extract values
-yq '.spec.values // {}' "$HELMRELEASE_PATH" > "$RAW_VALUES"
+yq '.spec.values // {}' "$HR_DOC" > "$RAW_VALUES"
 
-# valuesFrom: copy each Secret key from the app dir into its targetPath, or merge it as a YAML document
+# valuesFrom: copy each Secret key from the rendered app into its targetPath, or merge it as a YAML document
 # when there is no targetPath (spec.values still wins, as in Flux). The ${VAR}s get substituted below.
-VF_COUNT="$(yq '.spec.valuesFrom // [] | length' "$HELMRELEASE_PATH")"
+VF_COUNT="$(yq '.spec.valuesFrom // [] | length' "$HR_DOC")"
 for ((i = 0; i < VF_COUNT; i++)); do
-  VF_KIND="$(yq ".spec.valuesFrom[$i].kind" "$HELMRELEASE_PATH")"
-  VF_NAME="$(yq ".spec.valuesFrom[$i].name" "$HELMRELEASE_PATH")"
-  VF_KEY="$(yq ".spec.valuesFrom[$i].valuesKey // \"values.yaml\"" "$HELMRELEASE_PATH")"
-  VF_PATH="$(yq ".spec.valuesFrom[$i].targetPath // \"\"" "$HELMRELEASE_PATH")"
+  VF_KIND="$(yq ".spec.valuesFrom[$i].kind" "$HR_DOC")"
+  VF_NAME="$(yq ".spec.valuesFrom[$i].name" "$HR_DOC")"
+  VF_KEY="$(yq ".spec.valuesFrom[$i].valuesKey // \"values.yaml\"" "$HR_DOC")"
+  VF_PATH="$(yq ".spec.valuesFrom[$i].targetPath // \"\"" "$HR_DOC")"
   if [[ "$VF_KIND" != "Secret" ]]; then
     echo -e "${RED}      ✖ valuesFrom[$i]: only kind Secret is supported in CI${NC}"
     exit 1
   fi
-  VF_VALUE="$(yq ea "select(.kind == \"Secret\" and .metadata.name == \"$VF_NAME\") | .stringData[\"$VF_KEY\"]" "$APP_DIR"/*.yaml)"
+  VF_VALUE="$(yq ea "select(.kind == \"Secret\" and .metadata.name == \"$VF_NAME\") | .stringData[\"$VF_KEY\"]" "$RENDERED")"
   if [[ -z "$VF_VALUE" || "$VF_VALUE" == "null" ]]; then
     echo -e "${RED}      ✖ valuesFrom[$i]: key $VF_KEY of Secret $VF_NAME not found in $APP_DIR${NC}"
     exit 1
