@@ -84,6 +84,13 @@ spec:
             else
               echo "FAILED: blackbird"
             fi
+            GHUNT=5ee893929c51c7a8a665b199bbae04ce85a662b4
+            if pipvenv ghunt "https://github.com/mxrch/GHunt/archive/$GHUNT.tar.gz"; then
+              ln -sf /tools/ghunt/bin/ghunt /tools/bin/ghunt
+              echo "installed ghunt $GHUNT"
+            else
+              echo "FAILED: ghunt"
+            fi
             trap 'exit 0' TERM
             sleep infinity &
             wait
