@@ -103,7 +103,7 @@ spec:
         enabled: true
         data:
           run.py: |
-            import json, os, sys, time
+            import http.cookiejar, json, os, sys, time
             import instaloader
             from instaloader import FrozenNodeIterator, Profile, resumable_iteration
             from instaloader.exceptions import AbortDownloadException
@@ -126,11 +126,22 @@ spec:
                                         save_metadata=False, compress_json=False, download_comments=False,
                                         post_metadata_txt_pattern='', quiet=True, max_connection_attempts=3)
             os.makedirs(BASE + '/.complete', exist_ok=True)
+            LA = instaloader.Instaloader(dirname_pattern=BASE + '/{target}', quiet=True, max_connection_attempts=3)
+            try:
+                jar = http.cookiejar.MozillaCookieJar('/secrets/cookies.txt')
+                jar.load(ignore_discard=True, ignore_expires=True)
+                LA.context._session.cookies.update(jar)
+                LA.context.username = LA.test_login()
+            except Exception as e:
+                log(f'cookies: {type(e).__name__}: {e}')
+            if not LA.context.username:
+                log('cookies not working, avatars logged out')
+                LA = L
             public = []
             for name in profiles:
                 try:
                     profile = Profile.from_username(L.context, name)
-                    L.download_profilepic(profile)
+                    LA.download_profilepic(profile if LA is L else Profile.from_username(LA.context, name))
                     if profile.is_private:
                         log(f'{name}: private, avatar only')
                     else:
