@@ -123,12 +123,10 @@ spec:
               backupOwnerReference: self
               immediate: true
               suspend: false
-          revision: "5"
           retentionPolicy: "7d"
         recovery:
           method: object_store
           credentials: s3
-          revision: "4"   
     ingress:
         main:
           enabled: true
