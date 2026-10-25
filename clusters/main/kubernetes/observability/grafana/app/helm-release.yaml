@@ -106,7 +106,7 @@ spec:
               enabled: true
               trigger:
                 # Free slot in the nightly backup chain (UTC, 7 minutes apart)
-                schedule: 59 0 * * *
+                schedule: 28 23 * * *
     # Downloaded at startup (init container) from grafana.com or a URL, pinned to a revision;
     # Renovate bumps the revisions (the "# renovate: depName=" line must stay right above id:).
     # Placeholders are swapped for our data source uid; $${...} stops Flux substituting them.
