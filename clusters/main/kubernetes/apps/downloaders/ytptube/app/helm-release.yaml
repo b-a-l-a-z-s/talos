@@ -17,23 +17,23 @@ spec:
         namespace: flux-system
   valuesFrom:
     - kind: Secret
-      name: ytptube-values
+      name: backup-credentials
       valuesKey: S3URL
       targetPath: credentials.s3.url
     - kind: Secret
-      name: ytptube-values
+      name: backup-credentials
       valuesKey: BUCKET
       targetPath: credentials.s3.bucket
     - kind: Secret
-      name: ytptube-values
+      name: backup-credentials
       valuesKey: S3ID
       targetPath: credentials.s3.accessKey
     - kind: Secret
-      name: ytptube-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.secretKey
     - kind: Secret
-      name: ytptube-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.encrKey
   values:
@@ -64,9 +64,6 @@ spec:
               env:
                 # Authentik (ingress middleware) is the only login
                 YTP_DISABLE_AUTH: "true"
-    credentials:
-      s3:
-        type: s3
     persistence:
       config:
         enabled: true
