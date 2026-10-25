@@ -1,0 +1,89 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: toolbox
+  namespace: toolbox
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: app-template
+      version: 21.0.9
+      sourceRef:
+        kind: HelmRepository
+        name: truecharts
+        namespace: flux-system
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+            patch: |
+              - op: add
+                path: /spec/template/spec/containers/0/workingDir
+                value: /data
+  values:
+    TZ: Europe/Brussels
+    image:
+      repository: docker.io/library/python
+      pullPolicy: IfNotPresent
+      tag: 3.13.17-slim@sha256:d879ed88565a7a3c614b980b369d4a5025a9d057b71f93d09fc6d0b2ca823a18
+    resources:
+      requests:
+        cpu: 10m
+    service:
+      main:
+        enabled: false
+    workload:
+      main:
+        podSpec:
+          containers:
+            main:
+              command:
+                - sh
+                - /scripts/start.sh
+              env:
+                HOME: /data
+                PATH: /tools/bin:/usr/local/bin:/usr/bin:/bin
+              probes:
+                liveness:
+                  enabled: false
+                readiness:
+                  enabled: false
+                startup:
+                  enabled: false
+    configmap:
+      scripts:
+        enabled: true
+        data:
+          start.sh: |
+            mkdir -p /tools/bin
+            install() {
+              if python -m venv "/tools/$1" && "/tools/$1/bin/pip" install -q --no-cache-dir --disable-pip-version-check "$2"; then
+                ln -sf "/tools/$1/bin/$3" "/tools/bin/$3"
+                echo "installed $2"
+              else
+                echo "FAILED: $2"
+              fi
+            }
+            install sherlock sherlock-project==0.16.2 sherlock
+            trap 'exit 0' TERM
+            sleep infinity &
+            wait
+    persistence:
+      data:
+        enabled: true
+        mountPath: /data
+        size: 2Gi
+      tools:
+        enabled: true
+        type: emptyDir
+        mountPath: /tools
+      scripts:
+        enabled: true
+        type: configmap
+        objectName: scripts
+        mountPath: /scripts
+        readOnly: true

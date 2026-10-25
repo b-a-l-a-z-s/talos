@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - gallery-dl/ks.yaml
   - maigret/ks.yaml
+  - toolbox/ks.yaml

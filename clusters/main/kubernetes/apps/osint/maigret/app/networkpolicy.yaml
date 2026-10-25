@@ -1,5 +1,4 @@
 ---
-# Incoming only from traefik-internal and Homarr: no Authentik-free path from other pods
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -24,7 +23,6 @@ spec:
         - protocol: TCP
           port: 5000
 ---
-# Outgoing only to DNS and the public internet (the sites it checks), not the LAN or the cluster
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
