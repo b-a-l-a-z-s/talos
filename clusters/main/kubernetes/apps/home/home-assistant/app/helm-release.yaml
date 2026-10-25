@@ -62,7 +62,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 45 0 * * *
+                schedule: 31 0 * * *
     homeassistant:
       trusted_proxies:
         - 172.16.0.0/16
@@ -81,7 +81,7 @@ spec:
           scheduledBackups:
             - name: daily-backup
               # Last in the nightly chain: takes 5-9 min (~7 GB DB), more than the usual 7-min gap
-              schedule: "0 26 5 * * *"
+              schedule: "0 38 0 * * *"
               backupOwnerReference: self
               immediate: true
               suspend: false
