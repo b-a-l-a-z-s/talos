@@ -116,7 +116,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 35 23 * * *
+                schedule: 3 0 * * *
       drive:
         volsync:
           - name: b2
@@ -127,7 +127,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 35 23 * * *
+                schedule: 10 0 * * *
     cnpg:
       main:
         cluster:
@@ -141,7 +141,7 @@ spec:
           credentials: s3
           scheduledBackups:
             - name: daily-backup
-              schedule: "0 35 23 * * *"
+              schedule: "0 17 0 * * *"
               backupOwnerReference: self
               immediate: true
               suspend: false
