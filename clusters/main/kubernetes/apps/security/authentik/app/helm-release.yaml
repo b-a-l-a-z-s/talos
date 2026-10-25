@@ -93,7 +93,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 0 23 * * *
+                schedule: 7 23 * * *
       blueprints:
         volsync:
           - name: b2
@@ -104,7 +104,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 0 23 * * *
+                schedule: 14 23 * * *
       certs:
         volsync:
           - name: b2
@@ -115,7 +115,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 0 23 * * *
+                schedule: 21 23 * * *
       geoip:
         volsync:
           - name: b2
@@ -140,7 +140,7 @@ spec:
           credentials: s3
           scheduledBackups:
             - name: daily-backup
-              schedule: "0 0 23 * * *"
+              schedule: "0 28 23 * * *"
               backupOwnerReference: self
               immediate: true
               suspend: false
