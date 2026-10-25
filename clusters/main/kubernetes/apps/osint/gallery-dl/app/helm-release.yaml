@@ -61,7 +61,6 @@ spec:
         type: CronJob
         schedule: "30 6 * * *"
         suspend: false
-        # Overridden to 0 by spec.postRenderers (the chart turns 0 into its default 5)
         backoffLimit: 1
         activeDeadlineSeconds: 14400
         podSpec:
@@ -80,6 +79,111 @@ spec:
                   enabled: false
                 startup:
                   enabled: false
+      instaloader:
+        enabled: true
+        type: CronJob
+        schedule: "30 7 * * *"
+        suspend: false
+        backoffLimit: 1
+        activeDeadlineSeconds: 14400
+        podSpec:
+          restartPolicy: Never
+          containers:
+            instaloader:
+              enabled: true
+              primary: true
+              imageSelector: instaloaderImage
+              command: ["sh", "-c"]
+              args:
+                - >-
+                  pip install -q --disable-pip-version-check --target /tmp/pkgs instaloader==4.16rc1
+                  && python /scripts/instaloader.py
+              env:
+                HOME: /tmp
+                PYTHONPATH: /tmp/pkgs
+                TIME_BUDGET: "10800"
+              probes:
+                liveness:
+                  enabled: false
+                readiness:
+                  enabled: false
+                startup:
+                  enabled: false
+    instaloaderImage:
+      repository: docker.io/library/python
+      pullPolicy: IfNotPresent
+      tag: 3.13.17-alpine@sha256:5dcbe6043e931f65945060c7a991d55035191d7dfc52c8bed14468e95b8f7b9a
+    configmap:
+      instaloader:
+        enabled: true
+        data:
+          instaloader.py: |
+            import json, os, sys, time
+            import instaloader
+            from instaloader import FrozenNodeIterator, Profile, resumable_iteration
+            from instaloader.exceptions import AbortDownloadException
+
+            BASE = '/data/Instagram'
+            BUDGET = int(os.environ.get('TIME_BUDGET', '10800'))
+            START = time.time()
+
+            def log(msg):
+                print(time.strftime('%H:%M:%S'), msg, flush=True)
+
+            try:
+                with open('/secrets/instaloader.txt') as f:
+                    profiles = [l.strip().strip('/').split('/')[-1] for l in f if l.strip() and not l.startswith('#')]
+            except FileNotFoundError:
+                log('no /secrets/instaloader.txt, nothing to do')
+                sys.exit(0)
+
+            L = instaloader.Instaloader(dirname_pattern=BASE + '/{target}', download_video_thumbnails=False,
+                                        save_metadata=False, compress_json=False, download_comments=False,
+                                        post_metadata_txt_pattern='', quiet=True, max_connection_attempts=3)
+            os.makedirs(BASE + '/.complete', exist_ok=True)
+            out_of_time = False
+            for name in profiles:
+                if out_of_time:
+                    break
+                try:
+                    profile = Profile.from_username(L.context, name)
+                    L.download_profilepic(profile)
+                    if profile.is_private:
+                        log(f'{name}: private, avatar only')
+                        continue
+                    marker = f'{BASE}/.complete/{name}'
+                    posts = profile.get_posts()
+                    new = known = 0
+                    if os.path.exists(marker):
+                        for post in posts:
+                            if L.download_post(post, target=name):
+                                new, known = new + 1, 0
+                            else:
+                                known += 1
+                                if known >= 3:
+                                    break
+                    else:
+                        try:
+                            with resumable_iteration(
+                                    context=L.context, iterator=posts,
+                                    load=lambda _, path: FrozenNodeIterator(**json.load(open(path))),
+                                    save=lambda fni, path: json.dump(fni._asdict(), open(path, 'w')),
+                                    format_path=lambda magic: f'{BASE}/.resume/{name}_{magic}.json') as (resuming, _):
+                                if resuming:
+                                    log(f'{name}: resuming the first full download')
+                                for post in posts:
+                                    if L.download_post(post, target=name):
+                                        new += 1
+                                    if time.time() - START > BUDGET:
+                                        raise AbortDownloadException('time budget used up')
+                            open(marker, 'w').close()
+                            log(f'{name}: first full download complete')
+                        except AbortDownloadException:
+                            out_of_time = True
+                            log(f'{name}: stopped for tonight, continues next run')
+                    log(f'{name}: {new} new post(s)')
+                except Exception as e:
+                    log(f'{name}: {type(e).__name__}: {e}')
     persistence:
       secrets:
         enabled: true
@@ -88,9 +192,28 @@ spec:
         expandObjectName: false
         mountPath: /secrets
         readOnly: true
+        targetSelector:
+          main:
+            main: {}
+          instaloader:
+            instaloader: {}
       data:
         enabled: true
         type: nfs
         server: 192.168.1.49
         path: ${GALLERY_DL_PATH}
         mountPath: /data
+        targetSelector:
+          main:
+            main: {}
+          instaloader:
+            instaloader: {}
+      instaloader-script:
+        enabled: true
+        type: configmap
+        objectName: instaloader
+        mountPath: /scripts
+        readOnly: true
+        targetSelector:
+          instaloader:
+            instaloader: {}
