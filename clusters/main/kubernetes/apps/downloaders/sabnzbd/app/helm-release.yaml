@@ -147,7 +147,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 5 3 * * *    
+                schedule: 9 2 * * *
       downloads:
         enabled: true
         path: /mnt/main/Media/downloads
