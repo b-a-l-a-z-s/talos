@@ -18,23 +18,23 @@ spec:
   timeout: 20m
   valuesFrom:
     - kind: Secret
-      name: tracearr-values
+      name: backup-credentials
       valuesKey: S3URL
       targetPath: credentials.s3.url
     - kind: Secret
-      name: tracearr-values
+      name: backup-credentials
       valuesKey: BUCKET
       targetPath: credentials.s3.bucket
     - kind: Secret
-      name: tracearr-values
+      name: backup-credentials
       valuesKey: S3ID
       targetPath: credentials.s3.accessKey
     - kind: Secret
-      name: tracearr-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.secretKey
     - kind: Secret
-      name: tracearr-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.encrKey
     - kind: Secret
@@ -64,9 +64,6 @@ spec:
       repository: ghcr.io/connorgallopo/tracearr
       pullPolicy: IfNotPresent
       tag: 3.1.1@sha256:d0fe66480953c51da9bf82c3909799e80a4d24165962c747e756be31fcd0fb8f    
-    credentials:
-      s3:
-        type: s3
     securityContext:
       container:
         runAsNonRoot: false
