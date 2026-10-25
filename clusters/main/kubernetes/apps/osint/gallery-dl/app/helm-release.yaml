@@ -126,7 +126,8 @@ spec:
                                         save_metadata=False, compress_json=False, download_comments=False,
                                         post_metadata_txt_pattern='', quiet=True, max_connection_attempts=3)
             os.makedirs(BASE + '/.complete', exist_ok=True)
-            LA = instaloader.Instaloader(dirname_pattern=BASE + '/{target}', quiet=True, max_connection_attempts=3)
+            LA = instaloader.Instaloader(dirname_pattern=BASE + '/{target}', quiet=True, max_connection_attempts=3,
+                                         iphone_support=False)
             try:
                 jar = http.cookiejar.MozillaCookieJar('/secrets/cookies.txt')
                 jar.load(ignore_discard=True, ignore_expires=True)
