@@ -57,7 +57,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 34 1 * * *
+                schedule: 6 1 * * *
       configinc:
         volsync:
           - name: b2
@@ -68,7 +68,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 41 1 * * *
+                schedule: 13 1 * * *
     auth:
       enabled: true
     # The chart creates a websockets Service by default, but the broker only listens there with
