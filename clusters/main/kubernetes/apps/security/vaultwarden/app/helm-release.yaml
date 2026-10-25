@@ -18,23 +18,23 @@ spec:
   timeout: 20m
   valuesFrom:
     - kind: Secret
-      name: vaultwarden-values
+      name: backup-credentials
       valuesKey: S3URL
       targetPath: credentials.s3.url
     - kind: Secret
-      name: vaultwarden-values
+      name: backup-credentials
       valuesKey: BUCKET
       targetPath: credentials.s3.bucket
     - kind: Secret
-      name: vaultwarden-values
+      name: backup-credentials
       valuesKey: S3ID
       targetPath: credentials.s3.accessKey
     - kind: Secret
-      name: vaultwarden-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.secretKey
     - kind: Secret
-      name: vaultwarden-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.encrKey
     - kind: Secret
@@ -55,9 +55,6 @@ spec:
     resources:
       requests:
         cpu: 10m
-    credentials:
-      s3:
-        type: s3
     vaultwarden:
       allowSignups: false
       verifySignup: false
