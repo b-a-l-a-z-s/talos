@@ -100,12 +100,10 @@ spec:
               backupOwnerReference: self
               immediate: true
               suspend: false
-          revision: "6"
           retentionPolicy: "7d"
         recovery:
           method: object_store
           credentials: s3
-          revision: "5"
     tika:
       enabled: true
     workload:
