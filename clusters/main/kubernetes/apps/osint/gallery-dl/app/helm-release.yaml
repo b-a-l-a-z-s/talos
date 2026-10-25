@@ -141,16 +141,22 @@ spec:
                                         save_metadata=False, compress_json=False, download_comments=False,
                                         post_metadata_txt_pattern='', quiet=True, max_connection_attempts=3)
             os.makedirs(BASE + '/.complete', exist_ok=True)
-            out_of_time = False
+            public = []
             for name in profiles:
-                if out_of_time:
-                    break
                 try:
                     profile = Profile.from_username(L.context, name)
                     L.download_profilepic(profile)
                     if profile.is_private:
                         log(f'{name}: private, avatar only')
-                        continue
+                    else:
+                        public.append((name, profile))
+                except Exception as e:
+                    log(f'{name}: {type(e).__name__}: {e}')
+            out_of_time = False
+            for name, profile in public:
+                if out_of_time:
+                    break
+                try:
                     marker = f'{BASE}/.complete/{name}'
                     posts = profile.get_posts()
                     new = known = 0
