@@ -70,7 +70,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 9 2 * * *
+                schedule: 20 1 * * *
       consume:
         enabled: true
         type: nfs
@@ -96,7 +96,7 @@ spec:
           credentials: s3
           scheduledBackups:
             - name: daily-backup
-              schedule: "0 16 2 * * *"
+              schedule: "0 27 1 * * *"
               backupOwnerReference: self
               immediate: true
               suspend: false
