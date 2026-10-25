@@ -72,7 +72,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 30 4 * * *
+                schedule: 40 4 * * *
       films:
         enabled: true
         path: /mnt/main/Media/Films
