@@ -20,23 +20,23 @@ spec:
   # traefik-external, so CrowdSec covers it. Bitnami WordPress image.
   valuesFrom:
     - kind: Secret
-      name: wordpress-values
+      name: backup-credentials
       valuesKey: S3URL
       targetPath: credentials.s3.url
     - kind: Secret
-      name: wordpress-values
+      name: backup-credentials
       valuesKey: BUCKET
       targetPath: credentials.s3.bucket
     - kind: Secret
-      name: wordpress-values
+      name: backup-credentials
       valuesKey: S3ID
       targetPath: credentials.s3.accessKey
     - kind: Secret
-      name: wordpress-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.secretKey
     - kind: Secret
-      name: wordpress-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.encrKey
     - kind: Secret
@@ -56,23 +56,23 @@ spec:
       valuesKey: WORDPRESS_MARIADB_ROOT_PWD
       targetPath: mariadb.rootPassword
     - kind: Secret
-      name: wordpress-values
+      name: backup-credentials
       valuesKey: S3URL
       targetPath: mariadb.credentials.s3.url
     - kind: Secret
-      name: wordpress-values
+      name: backup-credentials
       valuesKey: BUCKET
       targetPath: mariadb.credentials.s3.bucket
     - kind: Secret
-      name: wordpress-values
+      name: backup-credentials
       valuesKey: S3ID
       targetPath: mariadb.credentials.s3.accessKey
     - kind: Secret
-      name: wordpress-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: mariadb.credentials.s3.secretKey
     - kind: Secret
-      name: wordpress-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: mariadb.credentials.s3.encrKey
   values:
@@ -82,9 +82,6 @@ spec:
     resources:
       requests:
         cpu: 10m
-    credentials:
-      s3:
-        type: s3
     wordpress:
       # Admin account, created on the first start only (an empty volume). Change the password or
       # add accounts in WordPress itself afterwards; editing these values then does nothing.
