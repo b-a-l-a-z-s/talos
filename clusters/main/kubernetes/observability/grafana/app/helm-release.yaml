@@ -6,7 +6,7 @@ metadata:
   name: grafana
   namespace: grafana
 spec:
-  interval: 15m
+  interval: 1h
   chart:
     spec:
       chart: grafana
@@ -15,21 +15,6 @@ spec:
         kind: HelmRepository
         name: truecharts
         namespace: flux-system
-      interval: 15m
-  timeout: 20m
-  maxHistory: 3
-  driftDetection:
-    mode: warn
-  install:
-    createNamespace: true
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
-  uninstall:
-    keepHistory: false
   # Dashboards and data sources come from ConfigMaps (labels grafana_dashboard / grafana_datasource)
   # that the chart's sidecar collects from every namespace: kube-prometheus-stack publishes its
   # dashboards and the Prometheus data source, observability/loki the Loki data source.

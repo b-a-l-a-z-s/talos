@@ -6,7 +6,7 @@ metadata:
   name: alloy
   namespace: alloy
 spec:
-  interval: 15m
+  interval: 1h
   chart:
     spec:
       chart: alloy
@@ -15,21 +15,6 @@ spec:
         kind: HelmRepository
         name: grafana
         namespace: flux-system
-      interval: 15m
-  timeout: 20m
-  maxHistory: 3
-  driftDetection:
-    mode: warn
-  install:
-    createNamespace: true
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    remediation:
-      retries: 3
-  uninstall:
-    keepHistory: false
   values:
     alloy:
       # Read position of every log file, kept on the node so a restart resumes where it
