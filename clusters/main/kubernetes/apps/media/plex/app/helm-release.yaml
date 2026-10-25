@@ -33,35 +33,31 @@ spec:
                 value: Direct
   valuesFrom:
     - kind: Secret
-      name: plex-values
+      name: backup-credentials
       valuesKey: S3URL
       targetPath: credentials.s3.url
     - kind: Secret
-      name: plex-values
+      name: backup-credentials
       valuesKey: BUCKET
       targetPath: credentials.s3.bucket
     - kind: Secret
-      name: plex-values
+      name: backup-credentials
       valuesKey: S3ID
       targetPath: credentials.s3.accessKey
     - kind: Secret
-      name: plex-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.secretKey
     - kind: Secret
-      name: plex-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.encrKey
   values:
     global:
       stopAll: false  
     TZ: Europe/Brussels
-    credentials:
-      s3:
-        type: s3
     plex:
       serverIP: ${PLEX_IP}
-      additionalAdvertiseURL:
       disableGDM: true
       requireHTTPS: false
     service:
