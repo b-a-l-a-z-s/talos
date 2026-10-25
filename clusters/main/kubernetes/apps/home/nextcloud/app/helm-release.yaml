@@ -75,7 +75,11 @@ spec:
       general:
         default_phone_region: BE
         accessIP: ${NGINX_EXTERNAL_IP}
-      #previews:
+      # Memories' recommended providers, rendered locally (Imagick, ffmpeg) instead of by Imaginary
+      previews:
+        imaginary: false
+        schedule: "*/15 * * * *"
+        providers: [PNG, JPEG, GIF, BMP, HEIC, TIFF, Movie, MKV, MP4, AVI]
       #  max_memory: 5120
       #  max_file_size_image: 100
       collabora:
@@ -92,6 +96,24 @@ spec:
         # ISO 8601 with UTC offset, the format CrowdSec's nextcloud parser expects.
         # The chart default (d/m/Y H:i:s) has no timezone and is ambiguous.
         log_date_format: "c"
+    # The chart's cron jobs (list replaces the default). preview-cron first scans each user's Memories
+    # timeline folders for files added on the SMB shares outside Nextcloud, then indexes and previews them.
+    cronjobs:
+      - name: nextcloud-cron
+        enabled: true
+        schedule: "*/5 * * * *"
+        cmd:
+          - echo "Running [php -f /var/www/html/cron.php] ..."
+          - php -f /var/www/html/cron.php
+          - echo "Finished [php -f /var/www/html/cron.php]"
+      - name: preview-cron
+        enabled: "{{ .Values.nextcloud.previews.cron }}"
+        schedule: "{{ .Values.nextcloud.previews.schedule }}"
+        cmd:
+          - for u in $(occ user:list | sed -n 's/^  - \([^:]*\):.*/\1/p'); do occ user:setting "$u" memories timelinePath 2>/dev/null | tr ';' '\n' | while read -r p; do [ -n "$p" ] && [ "$p" != / ] && occ files:scan --path="/$u/files$p" | tail -2 | head -1; done; done
+          - occ memories:index
+          - occ preview:pre-generate
+          - echo "Finished [scan, memories:index, preview:pre-generate]"
     workload:
       main:
         podSpec:
