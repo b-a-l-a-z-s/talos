@@ -105,7 +105,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 47 3 * * *
+                schedule: 51 2 * * *
     cnpg:
       main:
         cluster:
@@ -119,7 +119,7 @@ spec:
           credentials: s3
           scheduledBackups:
             - name: daily-backup
-              schedule: "0 54 3 * * *"
+              schedule: "0 58 2 * * *"
               backupOwnerReference: self
               immediate: true
               suspend: false
