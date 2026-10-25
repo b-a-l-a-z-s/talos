@@ -60,15 +60,30 @@ spec:
         data:
           start.sh: |
             mkdir -p /tools/bin
-            install() {
-              if python -m venv "/tools/$1" && "/tools/$1/bin/pip" install -q --no-cache-dir --disable-pip-version-check "$2"; then
-                ln -sf "/tools/$1/bin/$3" "/tools/bin/$3"
-                echo "installed $2"
-              else
-                echo "FAILED: $2"
-              fi
+            pipvenv() {
+              name=$1
+              shift
+              python -m venv "/tools/$name" && "/tools/$name/bin/pip" install -q --no-cache-dir --disable-pip-version-check "$@"
             }
-            install sherlock sherlock-project==0.16.2 sherlock
+            if pipvenv sherlock sherlock-project==0.16.2; then
+              ln -sf /tools/sherlock/bin/sherlock /tools/bin/sherlock
+              echo "installed sherlock-project==0.16.2"
+            else
+              echo "FAILED: sherlock"
+            fi
+            BLACKBIRD=c8329b2e83f20e3f74b218e68200389d838a6832
+            if python -c "import io, sys, tarfile, urllib.request; tarfile.open(fileobj=io.BytesIO(urllib.request.urlopen(sys.argv[1]).read())).extractall('/tools', filter='data')" "https://codeload.github.com/antoniaci/blackbird/tar.gz/$BLACKBIRD" \
+              && mv "/tools/blackbird-$BLACKBIRD" /tools/blackbird-src \
+              && pipvenv blackbird -r /tools/blackbird-src/requirements.txt; then
+              mkdir -p /data/blackbird/results
+              ln -sfn /data/blackbird/results /tools/blackbird-src/results
+              ln -sf /data/blackbird/.ai_key.json /tools/blackbird-src/.ai_key.json
+              printf '#!/bin/sh\ncd /tools/blackbird-src && exec /tools/blackbird/bin/python blackbird.py "$@"\n' > /tools/bin/blackbird
+              chmod +x /tools/bin/blackbird
+              echo "installed blackbird $BLACKBIRD"
+            else
+              echo "FAILED: blackbird"
+            fi
             trap 'exit 0' TERM
             sleep infinity &
             wait
