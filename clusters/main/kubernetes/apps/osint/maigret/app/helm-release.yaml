@@ -1,0 +1,64 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: maigret
+  namespace: maigret
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: app-template
+      version: 21.0.9
+      sourceRef:
+        kind: HelmRepository
+        name: truecharts
+        namespace: flux-system
+  values:
+    TZ: Europe/Brussels
+    image:
+      repository: docker.io/soxoj/maigret
+      pullPolicy: IfNotPresent
+      tag: web@sha256:cc112aa4058f0d014bcbf2ebbcd040b686ffc9cbe6c3f41d053ea7e97074f1c4
+    resources:
+      requests:
+        cpu: 10m
+    service:
+      main:
+        ports:
+          main:
+            port: 5000
+    workload:
+      main:
+        podSpec:
+          containers:
+            main:
+              env:
+                HOME: /app
+    persistence:
+      data:
+        enabled: true
+        mountPath: /app
+        size: 1Gi
+    ingress:
+      main:
+        enabled: true
+        ingressClassName: internal
+        integrations:
+          traefik:
+            enabled: true
+            middlewares:
+              - name: authentik
+                namespace: traefik-internal
+                expandObjectName: false
+          certManager:
+            enabled: true
+            certificateIssuer: domain-0-le-prod
+          nginx:
+            enabled: false
+        hosts:
+          - host: maigret.${DOMAIN_0}
+            paths:
+              - path: /
+                pathType: Prefix

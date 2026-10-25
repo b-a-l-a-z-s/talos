@@ -1,0 +1,58 @@
+---
+# Incoming only from traefik-internal and Homarr: no Authentik-free path from other pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: maigret-ingress
+  namespace: maigret
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: maigret
+      pod.name: main
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik-internal
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: homarr
+      ports:
+        - protocol: TCP
+          port: 5000
+---
+# Outgoing only to DNS and the public internet (the sites it checks), not the LAN or the cluster
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: maigret-egress
+  namespace: maigret
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
