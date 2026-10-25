@@ -24,7 +24,7 @@ metadata:
   name: traefik-external
   namespace: traefik-external
 spec:
-  interval: 15m
+  interval: 1h
   chart:
     spec:
       chart: traefik
@@ -33,23 +33,6 @@ spec:
         kind: HelmRepository
         name: traefik
         namespace: flux-system
-      interval: 15m
-  timeout: 20m
-  maxHistory: 3
-  driftDetection:
-    mode: warn
-  install:
-    createNamespace: true
-    crds: CreateReplace
-    remediation:
-      retries: 3
-  upgrade:
-    cleanupOnFail: true
-    crds: CreateReplace
-    remediation:
-      retries: 3
-  uninstall:
-    keepHistory: false
   # gatus-sidecar (observability/gatus) uses this IngressClass annotation as the default for every
   # "external" Ingress. The chart can't annotate its IngressClass, so patch the rendered object.
   # Normal (public) DNS, so these checks go through Cloudflare and the tunnel like real visitors.
