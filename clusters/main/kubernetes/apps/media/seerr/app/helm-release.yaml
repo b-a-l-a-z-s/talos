@@ -62,7 +62,7 @@ spec:
             src:
               enabled: true
               trigger:
-                schedule: 12 3 * * *
+                schedule: 16 2 * * *
     ingress:
         main:
           enabled: true
@@ -96,7 +96,7 @@ spec:
           credentials: s3
           scheduledBackups:
             - name: daily-backup
-              schedule: "0 19 3 * * *"
+              schedule: "0 23 2 * * *"
               backupOwnerReference: self
               immediate: true
               suspend: false
