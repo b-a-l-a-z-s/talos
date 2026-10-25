@@ -18,23 +18,23 @@ spec:
   timeout: 20m
   valuesFrom:
     - kind: Secret
-      name: frigate-values
+      name: backup-credentials
       valuesKey: S3URL
       targetPath: credentials.s3.url
     - kind: Secret
-      name: frigate-values
+      name: backup-credentials
       valuesKey: BUCKET
       targetPath: credentials.s3.bucket
     - kind: Secret
-      name: frigate-values
+      name: backup-credentials
       valuesKey: S3ID
       targetPath: credentials.s3.accessKey
     - kind: Secret
-      name: frigate-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.secretKey
     - kind: Secret
-      name: frigate-values
+      name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.encrKey
   values:
@@ -51,9 +51,6 @@ spec:
         integrations:
           metallb:
             enabled: true
-    credentials:
-      s3:
-        type: s3
     persistence:
       config:
         volsync:
