@@ -1,0 +1,6 @@
+---
+# CI-only values for the littlelink chart (merged after the HelmRelease values by deploy_helmrelease.sh).
+# The QR code Secret (qr.secret.yaml) comes from SOPS and doesn't exist in CI, so don't mount it.
+persistence:
+  qr:
+    enabled: false

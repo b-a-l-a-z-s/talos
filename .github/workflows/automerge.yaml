@@ -1,8 +1,9 @@
 ---
 # The only thing that merges Renovate PRs (Renovate itself has automerge: false, see
 # .github/special_talos.json5; it only labels PRs "automerge").
-# Merges at most one qualifying PR per run (oldest first), and only 5+ min after the last auto-merge:
-# two heavy restarts at once (Loki + Nextcloud, 2026-10-22) starved etcd and took the API down.
+# Merges one qualifying PR at a time (oldest first), 5+ min after the last auto-merge, and keeps going
+# for up to 5 hours per run: two heavy restarts at once (Loki + Nextcloud, 2026-10-22) starved etcd and
+# took the API down, and GitHub runs the */5 schedule only a few times a day.
 # A PR qualifies when "HelmRelease Test" (test-summary) passed on its current commit; only that exact
 # commit is merged (--match-head-commit). Never merged: PRs labelled system-upgrade (Talos/Kubernetes)
 # or needs-manual-merge (changes a HelmRelease that CI can't test, set by helmrelease-test.yaml).
@@ -27,6 +28,7 @@ concurrency:
 jobs:
   automerge:
     runs-on: ubuntu-latest
+    timeout-minutes: 320
     permissions:
       checks: read
       contents: write
@@ -46,59 +48,74 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Open, non-draft PRs from this repository labelled automerge, oldest first,
-          # without system-upgrade or needs-manual-merge
-          mapfile -t candidates < <(
-            gh pr list --state open --label automerge --limit 100 \
-              --json number,headRefOid,isDraft,isCrossRepository,labels,createdAt \
-              --jq 'map(select((.isDraft | not) and (.isCrossRepository | not)
-                               and ([.labels[].name] | (index("system-upgrade") or index("needs-manual-merge")) | not)))
-                    | sort_by(.createdAt) | .[] | "\(.number) \(.headRefOid)"'
-          )
-
-          if [ ${#candidates[@]} -eq 0 ]; then
-            echo "ℹ️ No PRs waiting to be auto-merged"
-            exit 0
-          fi
-
-          # At least 5 minutes between auto-merges: this workflow also runs right after every test,
-          # so one merge per run alone could still restart two apps seconds apart
-          last=$(gh pr list --state merged --limit 30 --json mergedAt,mergedBy \
-            --jq '[.[] | select(.mergedBy.login // "" | test("github-actions"))] | sort_by(.mergedAt) | last | .mergedAt // empty')
-          if [ -n "$last" ]; then
-            age=$(( $(date +%s) - $(date -d "$last" +%s) ))
-            if [ "$age" -lt 300 ]; then
-              echo "⏳ Last auto-merge was ${age}s ago, waiting until 5 minutes have passed"
-              exit 0
-            fi
-          fi
-
+          deadline=$(( $(date +%s) + 18000 ))
           merged=0
-          for candidate in "${candidates[@]}"; do
-            read -r number sha <<<"$candidate"
+          while :; do
+            # Open, non-draft PRs from this repository labelled automerge, oldest first,
+            # without system-upgrade or needs-manual-merge
+            mapfile -t candidates < <(
+              gh pr list --state open --label automerge --limit 100 \
+                --json number,headRefOid,isDraft,isCrossRepository,labels,createdAt \
+                --jq 'map(select((.isDraft | not) and (.isCrossRepository | not)
+                                 and ([.labels[].name] | (index("system-upgrade") or index("needs-manual-merge")) | not)))
+                      | sort_by(.createdAt) | .[] | "\(.number) \(.headRefOid)"'
+            )
 
-            # The HelmRelease Test summary must have passed on exactly this commit
-            result=$(gh api "repos/$GH_REPO/commits/$sha/check-runs?check_name=test-summary" \
-              --jq '.check_runs | sort_by(.started_at) | last
-                    | if . == null then "not run" elif .status != "completed" then "running"
-                      else .conclusion end')
-            if [ "$result" != "success" ]; then
-              echo "⏭️ PR #$number: HelmRelease Test on $sha is '$result', not merging"
-              continue
+            if [ ${#candidates[@]} -eq 0 ]; then
+              echo "ℹ️ No PRs waiting to be auto-merged"
+              break
             fi
 
-            if gh pr merge "$number" --squash --match-head-commit "$sha"; then
-              echo "✅ Merged PR #$number at $sha"
-              merged=$((merged + 1))
-              # This merge doesn't trigger pr-closed-discord.yaml (GITHUB_TOKEN), so post it here
-              NUMBER="$number" MERGED=true MERGED_BY=Automerge \
-                TITLE="$(gh pr view "$number" --json title --jq .title)" \
-                URL="$(gh pr view "$number" --json url --jq .url)" \
-                bash .github/scripts/discord-pr-closed.sh || echo "⚠️ Discord notification for #$number failed"
-              # One merge per run; the next run (schedule or the next test) takes the next PR
+            # At least 5 minutes between auto-merges: wait out the rest, unless that passes the run time
+            last=$(gh pr list --state merged --limit 30 --json mergedAt,mergedBy \
+              --jq '[.[] | select(.mergedBy.login // "" | test("github-actions"))] | sort_by(.mergedAt) | last | .mergedAt // empty')
+            if [ -n "$last" ]; then
+              age=$(( $(date +%s) - $(date -d "$last" +%s) ))
+              if [ "$age" -lt 300 ]; then
+                wait=$(( 300 - age ))
+                if [ $(( $(date +%s) + wait )) -gt "$deadline" ]; then
+                  echo "⏳ Run time used up, the next run continues"
+                  break
+                fi
+                echo "⏳ Last auto-merge was ${age}s ago, waiting ${wait}s"
+                sleep "$wait"
+                continue
+              fi
+            fi
+
+            merged_now=0
+            for candidate in "${candidates[@]}"; do
+              read -r number sha <<<"$candidate"
+
+              # The HelmRelease Test summary must have passed on exactly this commit
+              result=$(gh api "repos/$GH_REPO/commits/$sha/check-runs?check_name=test-summary" \
+                --jq '.check_runs | sort_by(.started_at) | last
+                      | if . == null then "not run" elif .status != "completed" then "running"
+                        else .conclusion end')
+              if [ "$result" != "success" ]; then
+                echo "⏭️ PR #$number: HelmRelease Test on $sha is '$result', not merging"
+                continue
+              fi
+
+              if gh pr merge "$number" --squash --match-head-commit "$sha"; then
+                echo "✅ Merged PR #$number at $sha"
+                merged=$((merged + 1))
+                merged_now=1
+                # This merge doesn't trigger pr-closed-discord.yaml (GITHUB_TOKEN), so post it here
+                NUMBER="$number" MERGED=true MERGED_BY=Automerge \
+                  TITLE="$(gh pr view "$number" --json title --jq .title)" \
+                  URL="$(gh pr view "$number" --json url --jq .url)" \
+                  bash .github/scripts/discord-pr-closed.sh || echo "⚠️ Discord notification for #$number failed"
+                # One merge at a time; the loop rescans and waits 5 minutes before the next
+                break
+              else
+                echo "⚠️ PR #$number could not be merged (conflict, or it moved on), skipping it"
+              fi
+            done
+
+            if [ "$merged_now" = 0 ]; then
+              echo "ℹ️ Nothing mergeable right now"
               break
-            else
-              echo "⚠️ PR #$number could not be merged (conflict, or it moved on), skipping it"
             fi
           done
 
