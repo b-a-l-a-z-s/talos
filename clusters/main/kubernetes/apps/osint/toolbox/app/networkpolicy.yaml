@@ -9,6 +9,17 @@ spec:
   policyTypes:
     - Ingress
     - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik-internal
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: homarr
+      ports:
+        - protocol: TCP
+          port: 5000
   egress:
     - to:
         - namespaceSelector:

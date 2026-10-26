@@ -35,7 +35,13 @@ spec:
         cpu: 10m
     service:
       main:
-        enabled: false
+        enabled: true
+        ports:
+          main:
+            enabled: true
+            port: 5000
+            targetPort: 5000
+            protocol: http
     workload:
       main:
         podSpec:
@@ -46,7 +52,9 @@ spec:
                 - /scripts/start.sh
               env:
                 HOME: /data
+                DATA_DIR: /data
                 PATH: /tools/bin:/usr/local/bin:/usr/bin:/bin
+                PYTHONDONTWRITEBYTECODE: "1"
               probes:
                 liveness:
                   enabled: false
@@ -59,41 +67,58 @@ spec:
         enabled: true
         data:
           start.sh: |
-            mkdir -p /tools/bin
+            #!/bin/sh
+            set -eu
+            mkdir -p /tools/bin /data/results/blackbird /data/blackbird/logs /data/work
             pipvenv() {
-              name=$1
+              name="$1"
               shift
-              python -m venv "/tools/$name" && "/tools/$name/bin/pip" install -q --no-cache-dir --disable-pip-version-check "$@"
+              python -m venv "/tools/$name"
+              "/tools/$name/bin/pip" install -q --no-cache-dir --disable-pip-version-check "$@"
             }
-            if pipvenv sherlock sherlock-project==0.16.2; then
-              ln -sf /tools/sherlock/bin/sherlock /tools/bin/sherlock
-              echo "installed sherlock-project==0.16.2"
-            else
-              echo "FAILED: sherlock"
-            fi
+            # Fail early if the ConfigMap contains an invalid Python app.
+            python -c 'import pathlib; p = pathlib.Path("/app/app.py"); compile(p.read_bytes(), str(p), "exec")'
+            # One web environment, plus separate environments for the three OSINT tools.
+            pipvenv web 'Flask==3.1.3' 'gunicorn==26.2.0'
+            echo 'Installed Flask and Gunicorn'
+            pipvenv sherlock 'sherlock-project==0.16.2'
+            ln -sf /tools/sherlock/bin/sherlock /tools/bin/sherlock
+            echo 'Installed Sherlock'
             BLACKBIRD=c8329b2e83f20e3f74b218e68200389d838a6832
-            if python -c "import io, sys, tarfile, urllib.request; tarfile.open(fileobj=io.BytesIO(urllib.request.urlopen(sys.argv[1]).read())).extractall('/tools', filter='data')" "https://codeload.github.com/antoniaci/blackbird/tar.gz/$BLACKBIRD" \
-              && mv "/tools/blackbird-$BLACKBIRD" /tools/blackbird-src \
-              && pipvenv blackbird -r /tools/blackbird-src/requirements.txt; then
-              mkdir -p /data/blackbird/results
-              ln -sfn /data/blackbird/results /tools/blackbird-src/results
-              ln -sf /data/blackbird/.ai_key.json /tools/blackbird-src/.ai_key.json
-              printf '#!/bin/sh\ncd /tools/blackbird-src && exec /tools/blackbird/bin/python blackbird.py "$@"\n' > /tools/bin/blackbird
-              chmod +x /tools/bin/blackbird
-              echo "installed blackbird $BLACKBIRD"
-            else
-              echo "FAILED: blackbird"
-            fi
+            python - "$BLACKBIRD" <<'PYTHON'
+            import io
+            import sys
+            import tarfile
+            import urllib.request
+            commit = sys.argv[1]
+            url = f'https://codeload.github.com/antoniaci/blackbird/tar.gz/{commit}'
+            with urllib.request.urlopen(url, timeout=90) as response:
+                archive = response.read()
+            with tarfile.open(fileobj=io.BytesIO(archive), mode='r:gz') as tf:
+                tf.extractall('/tools', filter='data')
+            PYTHON
+            mv "/tools/blackbird-$BLACKBIRD" /tools/blackbird-src
+            pipvenv blackbird -r /tools/blackbird-src/requirements.txt
+            rm -rf /tools/blackbird-src/results /tools/blackbird-src/logs
+            ln -s /data/results/blackbird /tools/blackbird-src/results
+            ln -s /data/blackbird/logs /tools/blackbird-src/logs
+            rm -f /tools/blackbird-src/.ai_key.json
+            ln -s /data/blackbird/.ai_key.json /tools/blackbird-src/.ai_key.json
+            cat > /tools/bin/blackbird <<'WRAPPER'
+            #!/bin/sh
+            cd /tools/blackbird-src
+            exec /tools/blackbird/bin/python /tools/blackbird-src/blackbird.py "$@"
+            WRAPPER
+            chmod +x /tools/bin/blackbird
+            echo 'Installed Blackbird'
             GHUNT=5ee893929c51c7a8a665b199bbae04ce85a662b4
-            if pipvenv ghunt "https://github.com/mxrch/GHunt/archive/$GHUNT.tar.gz"; then
-              ln -sf /tools/ghunt/bin/ghunt /tools/bin/ghunt
-              echo "installed ghunt $GHUNT"
-            else
-              echo "FAILED: ghunt"
-            fi
-            trap 'exit 0' TERM
-            sleep infinity &
-            wait
+            pipvenv ghunt "https://github.com/mxrch/GHunt/archive/$GHUNT.tar.gz"
+            ln -sf /tools/ghunt/bin/ghunt /tools/bin/ghunt
+            echo 'Installed GHunt'
+            echo 'Starting OSINT Toolbox on port 5000 with Gunicorn'
+            exec /tools/web/bin/gunicorn --chdir /app \
+              --workers 1 --worker-class gthread --threads 4 \
+              --bind 0.0.0.0:5000 --timeout 60 app:app
     persistence:
       data:
         enabled: true
@@ -109,3 +134,31 @@ spec:
         objectName: scripts
         mountPath: /scripts
         readOnly: true
+      app-code:
+        enabled: true
+        type: configmap
+        objectName: osint-toolbox-configmap
+        expandObjectName: false
+        mountPath: /app
+        readOnly: true
+    ingress:
+      main:
+        enabled: true
+        ingressClassName: internal
+        integrations:
+          traefik:
+            enabled: true
+            middlewares:
+              - name: authentik
+                namespace: traefik-internal
+                expandObjectName: false
+          certManager:
+            enabled: true
+            certificateIssuer: domain-0-le-prod
+          nginx:
+            enabled: false
+        hosts:
+          - host: toolbox.${DOMAIN_0}
+            paths:
+              - path: /
+                pathType: Prefix
