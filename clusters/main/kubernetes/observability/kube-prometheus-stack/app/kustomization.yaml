@@ -11,7 +11,9 @@ resources:
   - prometheusrule-proxmox.yaml
   - prometheusrule-gluetun.yaml
   - prometheusrule-volsync.yaml
+  - prometheusrule-cnpg.yaml
   - podmonitor-flux.yaml
+  - podmonitor-cnpg.yaml
   - temperatures-dashboard.yaml
   - apcupsd-exporter.yaml
   - ups-dashboard.yaml

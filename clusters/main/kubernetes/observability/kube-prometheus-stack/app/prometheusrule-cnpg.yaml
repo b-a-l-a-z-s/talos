@@ -1,0 +1,57 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
+# CNPG database backups and WAL archiving to B2 (metrics from podmonitor-cnpg.yaml).
+# warning goes to the backup Discord channel (alertmanagerconfig.yaml).
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: cnpg
+  namespace: kube-prometheus-stack
+spec:
+  groups:
+    - name: cnpg
+      rules:
+        # Clears itself after the next successful backup
+        - alert: CNPGBackupFailed
+          expr: max by (namespace) (cnpg_collector_last_failed_backup_timestamp) > max by (namespace) (cnpg_collector_last_available_backup_timestamp)
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: CNPG backup in {{ $labels.namespace }} failed
+            description: >-
+              The last base backup of the {{ $labels.namespace }} database failed and no newer one has succeeded.
+              Check its Backup object and the instance pod log. WAL archiving still covers point-in-time restores.
+
+        - alert: CNPGBackupTooOld
+          expr: time() - max by (namespace) (cnpg_collector_last_available_backup_timestamp) > 26 * 3600
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: CNPG backup in {{ $labels.namespace }} is older than 26 hours
+            description: >-
+              The {{ $labels.namespace }} database has no base backup in B2 from the last 26 hours,
+              so last night's scheduled backup did not run or did not finish.
+
+        - alert: CNPGWALArchivingFailing
+          expr: max by (namespace) (cnpg_pg_stat_archiver_last_failed_time) > max by (namespace) (cnpg_pg_stat_archiver_last_archived_time)
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: CNPG WAL archiving in {{ $labels.namespace }} is failing
+            description: >-
+              Postgres in {{ $labels.namespace }} cannot archive WAL to B2 (e.g. NoSuchBucket or credentials),
+              so point-in-time restores stop advancing and WAL piles up on the volume.
+
+        - alert: CNPGMetricsAbsent
+          expr: absent(cnpg_collector_last_available_backup_timestamp)
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: CNPG metrics are missing
+            description: >-
+              Prometheus has no CNPG backup metrics for 30 minutes (scrape blocked or instances down),
+              so failed database backups would go unnoticed.

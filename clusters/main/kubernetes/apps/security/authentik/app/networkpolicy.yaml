@@ -1,5 +1,5 @@
 ---
-# Postgres only accepts authentik's pods, its own instances and the CNPG operator
+# Postgres only accepts authentik's pods, its own instances, the CNPG operator and Prometheus (metrics)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -34,6 +34,16 @@ spec:
           port: 8000
         - protocol: TCP
           port: 5432
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-prometheus-stack
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 9187
 ---
 # Incoming only from both Traefiks (UI and forward auth), Homarr and Prometheus (metrics)
 apiVersion: networking.k8s.io/v1

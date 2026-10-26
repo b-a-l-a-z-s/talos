@@ -1,0 +1,20 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/podmonitor_v1.json
+# Backup and WAL archiving status of every CNPG instance, for prometheusrule-cnpg.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: cnpg
+  namespace: kube-prometheus-stack
+spec:
+  namespaceSelector:
+    any: true
+  selector:
+    matchLabels:
+      cnpg.io/podRole: instance
+  podMetricsEndpoints:
+    - port: metrics
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: cnpg_collector_.*|cnpg_pg_stat_archiver_.*
+          action: keep

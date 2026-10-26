@@ -122,8 +122,8 @@ spec:
         - protocol: TCP
           port: 53
 ---
-# Postgres only accepts Guacamole (web app and guacd's start-up check), its own instances and the
-# CNPG operator
+# Postgres only accepts Guacamole (web app and guacd's start-up check), its own instances, the
+# CNPG operator and Prometheus (metrics)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -158,3 +158,13 @@ spec:
           port: 8000
         - protocol: TCP
           port: 5432
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-prometheus-stack
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: prometheus
+      ports:
+        - protocol: TCP
+          port: 9187

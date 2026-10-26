@@ -38,11 +38,11 @@ spec:
           - name: severity
             value: info|none
             matchType: =~
-      # VolSync backup alerts (prometheusrule-volsync.yaml) go to their own Discord channel
+      # Backup alerts (prometheusrule-volsync.yaml, prometheusrule-cnpg.yaml) go to their own Discord channel
       - receiver: discord-volsync
         matchers:
           - name: alertname
-            value: VolSync.*
+            value: VolSync.*|CNPG.*
             matchType: =~
   inhibitRules:
     - sourceMatch:
