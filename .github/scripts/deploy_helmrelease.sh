@@ -215,18 +215,18 @@ CHART_VERSION="$RESOLVED_CHART_VERSION"
 CHART_REF="$RESOLVED_CHART_REF"
 REPO_URL="$RESOLVED_REPO_URL"
 APP_DIR="$(dirname "$HELMRELEASE_PATH")"
-# Values and Secrets as Flux applies them: the app dir rendered by kustomize (components add Secrets and patches)
-RENDERED="$(mktemp)"
+# Values, Secrets and ConfigMaps as Flux applies them: the app dir rendered by kustomize (components add Secrets and patches)
+APP_RENDERED="$(mktemp)"
 HR_DOC="$HELMRELEASE_PATH"
 if [[ -f "$APP_DIR/kustomization.yaml" ]]; then
-  if ! kubectl kustomize "$APP_DIR" > "$RENDERED"; then
+  if ! kubectl kustomize "$APP_DIR" > "$APP_RENDERED"; then
     echo -e "${RED}✖ kustomize build of $APP_DIR failed${NC}"
     exit 1
   fi
   HR_DOC="$(mktemp)"
-  yq "select(.kind == \"HelmRelease\" and .metadata.name == \"$RELEASE_NAME\")" "$RENDERED" > "$HR_DOC"
+  yq "select(.kind == \"HelmRelease\" and .metadata.name == \"$RELEASE_NAME\")" "$APP_RENDERED" > "$HR_DOC"
 else
-  cat "$APP_DIR"/*.yaml > "$RENDERED"
+  cat "$APP_DIR"/*.yaml > "$APP_RENDERED"
 fi
 #CI_VALUES_FILE="$APP_DIR/ci/ci-values.yaml"
 CI_VALUES_FILE="ci/$CHART_NAME.yaml"
@@ -265,7 +265,7 @@ for ((i = 0; i < VF_COUNT; i++)); do
     echo -e "${RED}      ✖ valuesFrom[$i]: only kind Secret is supported in CI${NC}"
     exit 1
   fi
-  VF_VALUE="$(yq ea "select(.kind == \"Secret\" and .metadata.name == \"$VF_NAME\") | .stringData[\"$VF_KEY\"]" "$RENDERED")"
+  VF_VALUE="$(yq ea "select(.kind == \"Secret\" and .metadata.name == \"$VF_NAME\") | .stringData[\"$VF_KEY\"]" "$APP_RENDERED")"
   if [[ -z "$VF_VALUE" || "$VF_VALUE" == "null" ]]; then
     echo -e "${RED}      ✖ valuesFrom[$i]: key $VF_KEY of Secret $VF_NAME not found in $APP_DIR${NC}"
     exit 1
@@ -540,6 +540,19 @@ while IFS= read -r extra_namespace; do
     --output=yaml \
   | kubectl apply --filename -
 done < <(yq -N '.metadata.namespace // ""' "$RENDERED" | sort -u)
+
+# ConfigMaps from the app dir (configMapGenerator) that the chart mounts but doesn't create
+APP_CONFIGMAPS="$(mktemp)"
+NAMESPACE="$NAMESPACE" yq ea \
+  'select(.kind == "ConfigMap" and (.metadata.namespace // strenv(NAMESPACE)) == strenv(NAMESPACE))' \
+  "$APP_RENDERED" > "$APP_CONFIGMAPS"
+if [[ -s "$APP_CONFIGMAPS" ]]; then
+  kubectl create namespace "$NAMESPACE" \
+    --dry-run=client \
+    --output=yaml \
+  | kubectl apply --filename -
+  kubectl apply --server-side --namespace "$NAMESPACE" --filename "$APP_CONFIGMAPS"
+fi
 
 # --------------------------------------------------
 # Deploy chart
