@@ -42,7 +42,7 @@ spec:
     TZ: Europe/Brussels
     image:
       repository: ghcr.io/bambanah/deemix
-      tag: v4.7.2@sha256:61dd313d1aee186ca61162c01ec7defd0dfe2f4f9bc6088fdaecfadf564e6cd9
+      tag: v4.8.0@sha256:aff6120619685b339a704b49bec13469684dbec2c7e39cd7bdf0014217dd1d0a
     workload:
       main:
         podSpec:
