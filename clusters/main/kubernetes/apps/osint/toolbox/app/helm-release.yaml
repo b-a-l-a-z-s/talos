@@ -29,7 +29,7 @@ spec:
     image:
       repository: docker.io/library/python
       pullPolicy: IfNotPresent
-      tag: 3.13.18-slim@sha256:fea139ecc0ab98360ead50b38872df6d42cf3503bec83215461224cbef0c8269
+      tag: 3.15.2-slim@sha256:7ce16513bf93a92cb89160580a412fa2735707ce2a312257b7a1fd8242cd11c6
     resources:
       requests:
         cpu: 10m
