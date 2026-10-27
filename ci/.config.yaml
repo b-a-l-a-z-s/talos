@@ -111,3 +111,4 @@ automergeUntested:
   - clusters/main/kubernetes/system/system-upgrade/tuppr/app
   - clusters/main/kubernetes/apps/security/cloudflared/app
   - clusters/main/kubernetes/apps/security/tailscale/app
+  - clusters/main/kubernetes/apps/security/tailscale-operator/app
