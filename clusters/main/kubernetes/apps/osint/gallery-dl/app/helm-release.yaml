@@ -97,7 +97,7 @@ spec:
     instaloaderImage:
       repository: docker.io/library/python
       pullPolicy: IfNotPresent
-      tag: 3.13.17-alpine@sha256:5dcbe6043e931f65945060c7a991d55035191d7dfc52c8bed14468e95b8f7b9a
+      tag: 3.13.18-alpine@sha256:7712cfd23e0501f5cb58faa5e6e0d515c9939bdbce866921799b31e696a1d13c
     configmap:
       instaloader:
         enabled: true
