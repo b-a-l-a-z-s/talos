@@ -106,6 +106,12 @@
         "matchPackageNames": ["/siderolabs/"],
         "matchUpdateTypes": ["major"],
         "dependencyDashboardApproval": true
+      },
+      {
+        "description": ["Python Docker image: manual merge only"],
+        "matchPackageNames": ["docker.io/library/python"],
+        "automerge": false,
+        "addLabels": ["needs-manual-merge"]
       }
     ]
   }
