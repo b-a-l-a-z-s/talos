@@ -17,3 +17,4 @@ resources:
   - truecharts.yaml
   - traefik.yaml
   - crowdsec.yaml
+  - tailscale.yaml

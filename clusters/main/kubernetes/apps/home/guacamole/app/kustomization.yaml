@@ -6,5 +6,6 @@ resources:
   - secret.yaml
   - namespace.yaml
   - networkpolicy.yaml
+  - tailnet-egress.yaml
 components:
   - ../../../../../components/backup/credentials

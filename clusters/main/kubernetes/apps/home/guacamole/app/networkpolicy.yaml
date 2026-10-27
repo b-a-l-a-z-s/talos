@@ -42,6 +42,18 @@ spec:
       ports:
         - protocol: TCP
           port: 5900
+    # VNC to the family PC over Tailscale: the operator's egress proxy for tailnet-egress.yaml
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tailscale-operator
+          podSelector:
+            matchLabels:
+              tailscale.com/parent-resource: family-pc
+              tailscale.com/parent-resource-ns: guacamole
+      ports:
+        - protocol: TCP
+          port: 5900
     # The chart's init container waits for the database before guacd starts
     - to:
         - podSelector:

@@ -7,3 +7,4 @@ resources:
   - cloudflared/ks.yaml
   - tailscale/ks.yaml
   - pihole/ks.yaml
+  - tailscale-operator/ks.yaml

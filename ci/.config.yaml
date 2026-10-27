@@ -90,7 +90,7 @@ dummyEnv:
   WORDPRESS_MARIADB_PWD: dummypassword
   WORDPRESS_MARIADB_ROOT_PWD: dummyrootpassword
   # CSKEY (CrowdSec Console enroll key) is deliberately absent: see ci/crowdsec.yaml
-  # CLOUDFLARED_TUNNEL_TOKEN / TAILSCALE_AUTH_KEY: those apps are in skipList (need real credentials)
+  # CLOUDFLARED_TUNNEL_TOKEN / TAILSCALE_AUTH_KEY / TAILSCALE_OPERATOR_*: those apps are in skipList (need real credentials)
 
 skipList:
   # Cluster plumbing a k3d cluster can't run, or that would fight with it
@@ -103,6 +103,7 @@ skipList:
   # Need real external credentials to start
   - clusters/main/kubernetes/apps/security/cloudflared/app
   - clusters/main/kubernetes/apps/security/tailscale/app
+  - clusters/main/kubernetes/apps/security/tailscale-operator/app
 
 # skipList entries whose updates are auto-merged anyway, untested (major updates stay manual)
 automergeUntested:

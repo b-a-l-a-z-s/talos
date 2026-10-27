@@ -1,0 +1,77 @@
+---
+# Operator and proxies: nothing may connect in (see below for guacd). Out: DNS and the public
+# internet (Tailscale API, control plane, DERP, peers)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: tailscale-operator
+  namespace: tailscale-operator
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
+---
+# Only guacd may use the family-pc egress proxy (Service in the guacamole namespace), VNC only
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: family-pc-egress
+  namespace: tailscale-operator
+spec:
+  podSelector:
+    matchLabels:
+      tailscale.com/parent-resource: family-pc
+      tailscale.com/parent-resource-ns: guacamole
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: guacamole
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/instance: guacamole
+              pod.name: guacd
+      ports:
+        - protocol: TCP
+          port: 5900
+---
+# Kube API (ipBlock doesn't match it): the operator manages proxies, proxies keep state in Secrets
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: tailscale-operator-apiserver
+  namespace: tailscale-operator
+spec:
+  endpointSelector: {}
+  egress:
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "6443"
+              protocol: TCP
