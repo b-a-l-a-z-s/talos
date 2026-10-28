@@ -82,7 +82,7 @@ spec:
       collabora:
         enabled: true
       # memory_limit and opcache stay at the chart defaults (1G, 128 MB).
-      # Workers sized for the 3000Mi container (chart default 180 would OOM it).
+      # Workers sized for the 4500Mi container (chart default 180 would OOM it).
       php:
         upload_limit: 20G
         pm_max_children: 24
@@ -115,6 +115,11 @@ spec:
       main:
         podSpec:
           containers:
+            main:
+              resources:
+                limits:
+                  # 3000Mi was OOM-killed by previews of a batch of large photos
+                  memory: 4500Mi
             # Streams nextcloud.log (on the NFS data volume) to stdout so CrowdSec can
             # read it. Reuses the Nextcloud image and runs as the same user.
             logtail:
@@ -147,6 +152,15 @@ spec:
             session.upload_progress.enabled = Off
             max_input_nesting_level = 10
             fatal_error_backtraces = Off
+      previews-config:
+        enabled: true
+        data:
+          # At most 2 new previews at once (default: CPU count, 8); a 200 MP photo needs ~1 GB
+          zz-previews.config.php: |
+            <?php
+            $CONFIG = [
+              'preview_concurrency_new' => 2,
+            ];
     persistence:
       php-hardening:
         enabled: true
@@ -154,6 +168,13 @@ spec:
         objectName: php-hardening
         mountPath: /usr/local/etc/php/conf.d/zz-php-hardening.ini
         subPath: zz-php-hardening.ini
+        readOnly: true
+      previews-config:
+        enabled: true
+        type: configmap
+        objectName: previews-config
+        mountPath: /var/www/html/config/zz-previews.config.php
+        subPath: zz-previews.config.php
         readOnly: true
       html:
         volsync:
