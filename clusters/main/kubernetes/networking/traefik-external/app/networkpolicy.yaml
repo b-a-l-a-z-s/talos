@@ -34,6 +34,9 @@ spec:
         # LAN clients via the MetalLB IP (externalTrafficPolicy Local keeps their address)
         - ipBlock:
             cidr: 192.168.1.0/24
+        # Home VPN clients (routed, not NATed; Blocky resolves the sites to the LAN IP)
+        - ipBlock:
+            cidr: 10.6.0.0/24
       ports:
         - protocol: TCP
           port: 8000
