@@ -29,7 +29,7 @@ spec:
     image:
       repository: docker.io/mikf123/gallery-dl
       pullPolicy: IfNotPresent
-      tag: 2026.10.30@sha256:4562b6960786dc09a123882467128e81db016d188e64d05b44d84f16cdfab54c
+      tag: 2026.10.31@sha256:96d1cad635e8ca77582b5f4642cc16162ef2dcf82febd4060605e87e3e847420
     resources:
       limits:
         memory: 1Gi
