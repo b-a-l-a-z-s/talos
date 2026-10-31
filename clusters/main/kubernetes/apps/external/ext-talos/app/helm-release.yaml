@@ -22,7 +22,7 @@ spec:
     service:
       main:
         type: ExternalIP
-        # talosctl dashboard in ttyd, a TrueNAS app (outside the cluster)
+        # talosctl dashboard in ttyd, a TrueNAS app (scripts/truenas/talos-dashboard.yaml)
         externalIP: 192.168.1.49
         ports:
           main:
