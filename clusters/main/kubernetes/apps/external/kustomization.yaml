@@ -7,4 +7,5 @@ resources:
   - ext-jetkvm/ks.yaml
   - ext-prox/ks.yaml
   - ext-slzb/ks.yaml
+  - ext-talos/ks.yaml
   - ext-printer/ks.yaml

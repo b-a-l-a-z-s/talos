@@ -1,0 +1,52 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: ext-talos
+  namespace: ext-talos
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: external-service
+      version: 18.0.6
+      sourceRef:
+        kind: HelmRepository
+        name: truecharts
+        namespace: flux-system
+  values:
+    global:
+      stopAll: false
+    TZ: Europe/Brussels
+    service:
+      main:
+        type: ExternalIP
+        # talosctl dashboard in ttyd, a TrueNAS app (outside the cluster)
+        externalIP: 192.168.1.49
+        ports:
+          main:
+            protocol: http
+            port: 7681
+    ingress:
+        main:
+          enabled: true
+          ingressClassName: internal
+          annotations:
+            # Gatus: ttyd answers 401 (HTTP auth prompt) when it's up
+            gatus.home-operations.com/endpoint: |
+              conditions:
+                - "[STATUS] == 401"
+          integrations:
+            traefik:
+              enabled: true
+            certManager:
+              enabled: true
+              certificateIssuer: domain-0-le-prod
+            nginx:
+              enabled: false
+          hosts:
+            - host: talos.${DOMAIN_0}
+              paths:
+                - path: /
+                  pathType: Prefix
