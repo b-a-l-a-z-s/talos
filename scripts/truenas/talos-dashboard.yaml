@@ -1,9 +1,8 @@
 # TrueNAS custom app (Apps > Discover Apps > ⋮ > Install via YAML): `talosctl dashboard` in the browser via ttyd.
 # Talks to the Talos API directly, so it keeps working when Kubernetes is down. Ingress: apps/external/ext-talos.
-# Fill in before installing:
-#   TTYD_PASSWORD    login password (user: talos)
-#   TALOSCONFIG_B64  read-only credential: talosctl config new --roles os:reader --crt-ttl 26280h reader.yaml
-#                    then base64 -w0 reader.yaml
+# No login: the credential is read-only (os:reader) and the ingress is internal only.
+# Fill in TALOSCONFIG_B64 before installing: talosctl config new --roles os:reader --crt-ttl 26280h reader.yaml,
+#   then base64 -w0 reader.yaml
 # After a Talos upgrade, bump TALOS_VERSION and TALOSCTL_SHA256 (talosctl-linux-amd64 in the release's sha256sum.txt).
 services:
   talos-dashboard:
@@ -15,7 +14,6 @@ services:
     environment:
       TALOS_VERSION: v1.14.5
       TALOSCTL_SHA256: ff432b68986709e6b69c563a08a2ced4232d5196b0dccd6d2e783e9d714d7d7d
-      TTYD_PASSWORD: "<password>"
       TALOSCONFIG_B64: "<base64 of the os:reader talosconfig>"
     volumes:
       - talosctl:/opt/talosctl
@@ -33,7 +31,7 @@ services:
         fi
         printf '%s' "$${TALOSCONFIG_B64}" | base64 -d > /tmp/talosconfig
         chmod 600 /tmp/talosconfig
-        exec ttyd -p 7681 -W -O -m 3 -c "talos:$${TTYD_PASSWORD}" \
+        exec ttyd -p 7681 -W -O -m 3 \
           -t titleFixed="Talos dashboard" -t disableLeaveAlert=true \
           "$$B" --talosconfig /tmp/talosconfig -e 192.168.1.35 -n 192.168.1.35 dashboard
 volumes:

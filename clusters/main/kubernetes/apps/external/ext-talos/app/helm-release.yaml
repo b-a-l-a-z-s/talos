@@ -32,11 +32,6 @@ spec:
         main:
           enabled: true
           ingressClassName: internal
-          annotations:
-            # Gatus: ttyd answers 401 (HTTP auth prompt) when it's up
-            gatus.home-operations.com/endpoint: |
-              conditions:
-                - "[STATUS] == 401"
           integrations:
             traefik:
               enabled: true
