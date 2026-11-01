@@ -34,17 +34,20 @@ spec:
               - 100.64.0.0/10
               - 169.254.0.0/16
 ---
-# Only guacd may use the family-pc egress proxy (Service in the guacamole namespace), VNC only
+# Only guacd may use the egress proxies for Guacamole (guacamole/app/tailnet-egress.yaml), VNC only
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: family-pc-egress
+  name: guacamole-egress-proxies
   namespace: tailscale-operator
 spec:
   podSelector:
     matchLabels:
-      tailscale.com/parent-resource: family-pc
       tailscale.com/parent-resource-ns: guacamole
+    matchExpressions:
+      - key: tailscale.com/parent-resource
+        operator: In
+        values: [family-pc, christine-big]
   policyTypes:
     - Ingress
   ingress:
