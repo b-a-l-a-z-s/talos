@@ -56,7 +56,7 @@ Key goals of this setup:
 ### Talos Linux
 - Immutable, minimal OS reduces attack surface
 - No SSH or package manager
-- Fully API-driven, ideal for GitOps-based Kubernetes clusters
+- Fully API-driven, ideal for GitOps-based Kubernetes cluster
 
 ### FluxCD
 - Continuous reconciliation instead of one-shot deployments
@@ -66,7 +66,7 @@ Key goals of this setup:
 ### Single-Node Cluster
 - Simplifies operations and reduces complexity
 - Ideal for homelab and learning environments
-- Focuses on reproducibility rather than high availability: nightly offsite backups make a rebuild cheap
+- Focuses on reproducibility rather than high availability: nightly offsite backups make a rebuild easy
 
 ---
 
