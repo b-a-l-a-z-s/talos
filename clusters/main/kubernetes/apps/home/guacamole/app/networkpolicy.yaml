@@ -42,15 +42,18 @@ spec:
       ports:
         - protocol: TCP
           port: 5900
-    # VNC to the family PC over Tailscale: the operator's egress proxy for tailnet-egress.yaml
+    # VNC to tailnet devices: the operator's egress proxies for tailnet-egress.yaml
     - to:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: tailscale-operator
           podSelector:
             matchLabels:
-              tailscale.com/parent-resource: family-pc
               tailscale.com/parent-resource-ns: guacamole
+            matchExpressions:
+              - key: tailscale.com/parent-resource
+                operator: In
+                values: [family-pc, christine-big]
       ports:
         - protocol: TCP
           port: 5900

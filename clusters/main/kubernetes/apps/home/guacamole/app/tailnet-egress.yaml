@@ -1,6 +1,6 @@
 ---
-# Family PC over Tailscale (operator egress proxy). Guacamole connection: family-pc.guacamole.svc.cluster.local:5900
-# The operator rewrites externalName, so Flux only creates this Service: delete it to apply changes
+# Tailnet devices for Guacamole (operator egress proxies), e.g. family-pc.guacamole.svc.cluster.local:5900
+# The operator rewrites externalName, so Flux only creates these Services: delete one to apply changes
 apiVersion: v1
 kind: Service
 metadata:
@@ -8,6 +8,18 @@ metadata:
   namespace: guacamole
   annotations:
     tailscale.com/tailnet-fqdn: "${FAMILY_PC_TAILNET_FQDN}"
+    kustomize.toolkit.fluxcd.io/ssa: IfNotPresent
+spec:
+  type: ExternalName
+  externalName: placeholder
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: christine-big
+  namespace: guacamole
+  annotations:
+    tailscale.com/tailnet-fqdn: "${CHRISTINE_BIG_TAILNET_FQDN}"
     kustomize.toolkit.fluxcd.io/ssa: IfNotPresent
 spec:
   type: ExternalName
