@@ -118,7 +118,7 @@ spec:
           marketplace:
             # renovate: depName="Node Exporter Full"
             id: 1860
-            revision: 45
+            revision: 46
         # TrueNAS disks (smartctl_exporter)
         smartctl:
           enabled: true
