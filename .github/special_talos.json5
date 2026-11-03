@@ -1,5 +1,9 @@
 {
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+    // Plain manifests (not HelmReleases) whose images Renovate should track
+    "kubernetes": {
+      "managerFilePatterns": ["clusters/main/kubernetes/apps/security/pihole/app/exporter.yaml"]
+    },
     "packageRules": [
       // ---------------------------------------------------------------------------------------------
       // Auto-merge policy. Renovate never merges by itself, it only labels PRs "automerge".
