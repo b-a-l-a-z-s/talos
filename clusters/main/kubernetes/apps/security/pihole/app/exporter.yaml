@@ -28,7 +28,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: pihole-exporter
-          image: docker.io/ekofr/pihole-exporter:v1.3.1
+          image: docker.io/ekofr/pihole-exporter:v1.3.1@sha256:4233c06fcd2d62c37b9345228bc9f798b3a66d052b4955ec6a0e5b8825e20827
           env:
             - name: PIHOLE_PROTOCOL
               value: http
