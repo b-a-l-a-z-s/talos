@@ -123,6 +123,7 @@ spec:
       plugins:
         crowdsec-bouncer:
           moduleName: github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin
+          # renovate: datasource=github-releases depName=maxlerebourg/crowdsec-bouncer-traefik-plugin
           version: v1.7.1
 
 
