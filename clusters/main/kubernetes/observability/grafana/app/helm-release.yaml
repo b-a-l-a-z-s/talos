@@ -216,7 +216,7 @@ spec:
             - name: "$${DS_PROMETHEUS}"
               value: prometheus
           # renovate: datasource=github-releases depName=controlplaneio-fluxcd/flux-operator
-          url: https://raw.githubusercontent.com/controlplaneio-fluxcd/flux-operator/v0.61.0/config/monitoring/dashboards/flux-performance.json
+          url: https://raw.githubusercontent.com/controlplaneio-fluxcd/flux-operator/v0.62.1/config/monitoring/dashboards/flux-performance.json
     ingress:
       main:
         enabled: true
