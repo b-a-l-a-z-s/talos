@@ -50,7 +50,7 @@ spec:
     image:
       repository: ghcr.io/lycheeorg/lychee
       pullPolicy: IfNotPresent
-      tag: v7.12.0@sha256:4bcaa1757ac1919a1cba19428a7a97628aecebee8b178778478a88c08d6312cb
+      tag: v7.12.1@sha256:3da32e37df957acdffaf5ff978e28712809e86fec9946e58236a95bbc179c719
     securityContext:
       container:
         # The entrypoint starts as root, then drops to www-data (PUID/PGID) via gosu
