@@ -197,7 +197,9 @@ function album_children(?string $parent): array {
     $key = $parent ?? '';
     if (isset($children[$key])) return $children[$key];
     if ($parent === null) {
-        $list = ly('GET', 'Albums')['albums'] ?? [];
+        // Pinned albums are listed apart from the rest; first, so they win over a same-named album
+        $j = ly('GET', 'Albums');
+        $list = array_merge($j['pinned_albums'] ?? [], $j['albums'] ?? []);
     } else {
         $list = []; $page = 1;
         do {
