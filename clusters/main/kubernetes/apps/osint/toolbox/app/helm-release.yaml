@@ -30,6 +30,7 @@ spec:
       repository: docker.io/library/python
       pullPolicy: IfNotPresent
       tag: 3.13-slim
+    resources:
       requests:
         cpu: 10m
     service:
