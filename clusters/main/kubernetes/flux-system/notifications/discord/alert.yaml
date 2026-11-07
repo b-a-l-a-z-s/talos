@@ -1,0 +1,216 @@
+apiVersion: notification.toolkit.fluxcd.io/v1
+kind: Alert
+metadata:
+  name: discord
+  namespace: flux-system
+spec:
+  providerRef:
+    name: discord
+  eventSeverity: error
+  # Flux can't wildcard namespaces: add each new HelmRelease namespace here.
+  eventSources:
+    - kind: GitRepository
+      name: "*"
+    - kind: Kustomization
+      name: "*"
+    - kind: HelmRelease
+      name: "*"
+      namespace: alloy
+    - kind: HelmRelease
+      name: "*"
+      namespace: authentik
+    - kind: HelmRelease
+      name: "*"
+      namespace: blocky
+    - kind: HelmRelease
+      name: "*"
+      namespace: cert-manager
+    - kind: HelmRelease
+      name: "*"
+      namespace: cloudflared
+    - kind: HelmRelease
+      name: "*"
+      namespace: cloudnative-pg
+    - kind: HelmRelease
+      name: "*"
+      namespace: clusterissuer
+    - kind: HelmRelease
+      name: "*"
+      namespace: crowdsec
+    - kind: HelmRelease
+      name: "*"
+      namespace: deemix
+    - kind: HelmRelease
+      name: "*"
+      namespace: deemix2
+    - kind: HelmRelease
+      name: "*"
+      namespace: ext-garage
+    - kind: HelmRelease
+      name: "*"
+      namespace: ext-jetkvm
+    - kind: HelmRelease
+      name: "*"
+      namespace: ext-nas
+    - kind: HelmRelease
+      name: "*"
+      namespace: ext-pikvm
+    - kind: HelmRelease
+      name: "*"
+      namespace: ext-printer
+    - kind: HelmRelease
+      name: "*"
+      namespace: ext-prox
+    - kind: HelmRelease
+      name: "*"
+      namespace: ext-slzb
+    - kind: HelmRelease
+      name: "*"
+      namespace: ext-talos
+    - kind: HelmRelease
+      name: "*"
+      namespace: flux-system
+    - kind: HelmRelease
+      name: "*"
+      namespace: frigate
+    - kind: HelmRelease
+      name: "*"
+      namespace: gallery-dl
+    - kind: HelmRelease
+      name: "*"
+      namespace: gatus
+    - kind: HelmRelease
+      name: "*"
+      namespace: generic-device-plugin
+    - kind: HelmRelease
+      name: "*"
+      namespace: grafana
+    - kind: HelmRelease
+      name: "*"
+      namespace: guacamole
+    - kind: HelmRelease
+      name: "*"
+      namespace: headlamp
+    - kind: HelmRelease
+      name: "*"
+      namespace: homarr
+    - kind: HelmRelease
+      name: "*"
+      namespace: home-assistant
+    - kind: HelmRelease
+      name: "*"
+      namespace: kromgo
+    - kind: HelmRelease
+      name: "*"
+      namespace: kube-prometheus-stack
+    - kind: HelmRelease
+      name: "*"
+      namespace: kube-system
+    - kind: HelmRelease
+      name: "*"
+      namespace: kubernetes-reflector
+    - kind: HelmRelease
+      name: "*"
+      namespace: littlelink
+    - kind: HelmRelease
+      name: "*"
+      namespace: loki
+    - kind: HelmRelease
+      name: "*"
+      namespace: longhorn-system
+    - kind: HelmRelease
+      name: "*"
+      namespace: lychee
+    - kind: HelmRelease
+      name: "*"
+      namespace: maigret
+    - kind: HelmRelease
+      name: "*"
+      namespace: mealie
+    - kind: HelmRelease
+      name: "*"
+      namespace: metallb
+    - kind: HelmRelease
+      name: "*"
+      namespace: metallb-config
+    - kind: HelmRelease
+      name: "*"
+      namespace: mosquitto
+    - kind: HelmRelease
+      name: "*"
+      namespace: nextcloud
+    - kind: HelmRelease
+      name: "*"
+      namespace: openebs
+    - kind: HelmRelease
+      name: "*"
+      namespace: paperless-ngx
+    - kind: HelmRelease
+      name: "*"
+      namespace: pihole
+    - kind: HelmRelease
+      name: "*"
+      namespace: plex
+    - kind: HelmRelease
+      name: "*"
+      namespace: plex-auto-languages
+    - kind: HelmRelease
+      name: "*"
+      namespace: profilarr
+    - kind: HelmRelease
+      name: "*"
+      namespace: prometheus-pve-exporter
+    - kind: HelmRelease
+      name: "*"
+      namespace: prowlarr
+    - kind: HelmRelease
+      name: "*"
+      namespace: radarr
+    - kind: HelmRelease
+      name: "*"
+      namespace: sabnzbd
+    - kind: HelmRelease
+      name: "*"
+      namespace: seerr
+    - kind: HelmRelease
+      name: "*"
+      namespace: snapshot-controller
+    - kind: HelmRelease
+      name: "*"
+      namespace: sonarr
+    - kind: HelmRelease
+      name: "*"
+      namespace: syncthing
+    - kind: HelmRelease
+      name: "*"
+      namespace: system-upgrade
+    - kind: HelmRelease
+      name: "*"
+      namespace: tailscale
+    - kind: HelmRelease
+      name: "*"
+      namespace: tailscale-operator
+    - kind: HelmRelease
+      name: "*"
+      namespace: toolbox
+    - kind: HelmRelease
+      name: "*"
+      namespace: tracearr
+    - kind: HelmRelease
+      name: "*"
+      namespace: traefik-external
+    - kind: HelmRelease
+      name: "*"
+      namespace: traefik-internal
+    - kind: HelmRelease
+      name: "*"
+      namespace: vaultwarden
+    - kind: HelmRelease
+      name: "*"
+      namespace: volsync
+    - kind: HelmRelease
+      name: "*"
+      namespace: wordpress
+    - kind: HelmRelease
+      name: "*"
+      namespace: ytptube
