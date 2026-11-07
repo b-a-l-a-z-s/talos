@@ -13,6 +13,23 @@ spec:
         kind: HelmRepository
         name: metallb
         namespace: flux-system
+  # Single node: the statuscleaner holds host port 19443, so stop the old pod before starting the new one.
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Deployment
+              name: metallb-frr-k8s-statuscleaner
+            patch: |
+              apiVersion: apps/v1
+              kind: Deployment
+              metadata:
+                name: metallb-frr-k8s-statuscleaner
+              spec:
+                strategy:
+                  rollingUpdate:
+                    maxSurge: 0
+                    maxUnavailable: 1
   values:
     speaker:
       ignoreExcludeLB: true
