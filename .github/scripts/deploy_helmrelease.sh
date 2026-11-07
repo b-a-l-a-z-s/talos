@@ -585,6 +585,10 @@ for pod in $(kubectl get pods -n "$NAMESPACE" -o name 2>/dev/null); do
   kubectl logs -n "$NAMESPACE" "$pod" --all-containers --tail=200 || true
 done
 
+# Host AppArmor profiles also apply inside k3d (mosquitto, 2026-11-07)
+print_sub_section "🛡️ AppArmor denials:"
+sudo dmesg 2>/dev/null | grep 'apparmor="DENIED"' | grep -v 'profile="systemd-detect-virt"' | tail -20 || true
+
 # --------------------------------------------------
 # Exit result
 # --------------------------------------------------

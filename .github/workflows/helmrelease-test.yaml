@@ -290,6 +290,14 @@ jobs:
         run: |
           yq e '.dummyEnv | to_entries | .[] | "\(.key)=\(.value)"' ci/.config.yaml >> $GITHUB_ENV
           
+      # Ubuntu 26.04 runners enforce a host AppArmor profile on /usr/sbin/mosquitto, which also
+      # confines the binary inside k3d and blocks /mosquitto/config/mosquitto.conf.
+      - name: Unload host AppArmor profiles that confine containers
+        run: |
+          if [ -f /etc/apparmor.d/mosquitto ]; then
+            sudo apparmor_parser --remove /etc/apparmor.d/mosquitto
+          fi
+
       # --------------------------------------------------
       # Create ephemeral k3d cluster
       # --------------------------------------------------
