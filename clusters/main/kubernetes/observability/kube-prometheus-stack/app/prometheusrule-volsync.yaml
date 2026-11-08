@@ -23,6 +23,40 @@ spec:
               The backup job {{ $labels.job_name }} has had failed pods for 10 minutes and is still retrying.
               Check the mover pod logs in {{ $labels.namespace }}.
 
+        # A mover that can't start (e.g. CreateContainerConfigError) waits forever instead of failing
+        - alert: VolSyncBackupStuck
+          expr: max by (namespace, pod, reason) (kube_pod_container_status_waiting_reason{pod=~"volsync-src-.*", reason!="ContainerCreating"}) > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: VolSync backup pod {{ $labels.pod }} can't start
+            description: >-
+              The backup pod {{ $labels.pod }} has been waiting with {{ $labels.reason }} for 15 minutes.
+              VolSync keeps waiting instead of failing, so no backup runs until it is fixed.
+
+        - alert: VolSyncBackupRunningLong
+          expr: (time() - kube_job_status_start_time{job_name=~"volsync-src-.*"}) > 3 * 3600 and on (namespace, job_name) kube_job_status_active > 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: VolSync backup {{ $labels.job_name }} has been running for over 3 hours
+            description: >-
+              The backup job {{ $labels.job_name }} in {{ $labels.namespace }} started over 3 hours ago and is
+              still running (normal runs take minutes). Check the mover pod.
+
+        - alert: VolSyncNoRecentBackup
+          expr: sum by (obj_namespace, obj_name) (increase(volsync_sync_duration_seconds_count{role="source"}[26h])) == 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: VolSync backup {{ $labels.obj_name }} has not succeeded in 26 hours
+            description: >-
+              {{ $labels.obj_name }} in {{ $labels.obj_namespace }} has had no successful backup for 26 hours
+              (stuck, failing or paused).
+
         - alert: VolSyncVolumeOutOfSync
           expr: volsync_volume_out_of_sync{role="source"} == 1
           for: 15m
