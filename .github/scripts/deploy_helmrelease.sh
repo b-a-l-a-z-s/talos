@@ -209,6 +209,8 @@ fi
 # --------------------------------------------------
 RELEASE_NAME="$(yq '.metadata.name' "$HELMRELEASE_PATH")"
 NAMESPACE="$(yq '.metadata.namespace' "$HELMRELEASE_PATH")"
+# Same wait as Flux: spec.timeout (20m for slow starters like nextcloud), else 5m
+HELM_TIMEOUT="$(yq '.spec.timeout // "5m"' "$HELMRELEASE_PATH")"
 resolve_helm_chart "$HELMRELEASE_PATH"
 CHART_NAME="$RESOLVED_CHART_NAME"
 CHART_VERSION="$RESOLVED_CHART_VERSION"
@@ -566,7 +568,7 @@ helm upgrade --install "$RELEASE_NAME" "$CHART_REF" \
   --create-namespace \
   "${HELM_VALUES_ARGS[@]}" \
   --wait \
-  --timeout 5m
+  --timeout "$HELM_TIMEOUT"
 HELM_RC=$?
 set -e
 
