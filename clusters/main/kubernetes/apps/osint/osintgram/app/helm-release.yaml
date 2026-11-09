@@ -1,0 +1,121 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: osintgram
+  namespace: osintgram
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: app-template
+      version: 21.2.0
+      sourceRef:
+        kind: HelmRepository
+        name: truecharts
+        namespace: flux-system
+  timeout: 20m
+  values:
+    TZ: Europe/Brussels
+    image:
+      repository: docker.io/library/python
+      pullPolicy: IfNotPresent
+      tag: 3.12-slim
+    resources:
+      requests:
+        cpu: 10m
+    service:
+      main:
+        ports:
+          main:
+            port: 8000
+    workload:
+      main:
+        podSpec:
+          containers:
+            main:
+              command:
+                - sh
+                - /scripts/start.sh
+              env:
+                HOME: /data
+                PYTHONDONTWRITEBYTECODE: "1"
+                OSINTGRAM_HOST: osintgram.${DOMAIN_0}
+    configmap:
+      scripts:
+        enabled: true
+        data:
+          start.sh: |
+            #!/bin/sh
+            set -eu
+            OSINTGRAM=a560498be79a3bf40d7f3b203ad174661b8e81e7
+            rm -rf /tools/osintgram /tools/venv
+            mkdir -p /data/config /data/cache /data/dossier
+            python - "$OSINTGRAM" <<'PYTHON'
+            import io
+            import sys
+            import tarfile
+            import urllib.request
+            commit = sys.argv[1]
+            url = f'https://codeload.github.com/Datalux/Osintgram/tar.gz/{commit}'
+            with urllib.request.urlopen(url, timeout=90) as response:
+                archive = response.read()
+            with tarfile.open(fileobj=io.BytesIO(archive), mode='r:gz') as tf:
+                tf.extractall('/tools', filter='data')
+            PYTHON
+            mv /tools/*-"$OSINTGRAM" /tools/osintgram
+            python -m venv /tools/venv
+            /tools/venv/bin/pip install -q --no-cache-dir --disable-pip-version-check -r /tools/osintgram/requirements.txt
+            echo 'Installed Osintgram'
+            cd /tools/osintgram
+            rm -rf config cache dossier
+            ln -s /data/config config
+            ln -s /data/cache cache
+            ln -s /data/dossier dossier
+            python - <<'PYTHON'
+            import pathlib
+            p = pathlib.Path('src/web/app.py')
+            s = p.read_text()
+            old = '_LOCAL_HOSTS = {'
+            if old not in s:
+                raise SystemExit('_LOCAL_HOSTS not found in src/web/app.py')
+            p.write_text(s.replace(old, '_LOCAL_HOSTS = {os.environ["OSINTGRAM_HOST"], ', 1))
+            PYTHON
+            exec /tools/venv/bin/uvicorn src.web.app:app --host 0.0.0.0 --port 8000
+    persistence:
+      data:
+        enabled: true
+        mountPath: /data
+        size: 1Gi
+      tools:
+        enabled: true
+        type: emptyDir
+        mountPath: /tools
+      scripts:
+        enabled: true
+        type: configmap
+        objectName: scripts
+        mountPath: /scripts
+        readOnly: true
+    ingress:
+      main:
+        enabled: true
+        ingressClassName: internal
+        integrations:
+          traefik:
+            enabled: true
+            middlewares:
+              - name: authentik
+                namespace: traefik-internal
+                expandObjectName: false
+          certManager:
+            enabled: true
+            certificateIssuer: domain-0-le-prod
+          nginx:
+            enabled: false
+        hosts:
+          - host: osintgram.${DOMAIN_0}
+            paths:
+              - path: /
+                pathType: Prefix

@@ -144,6 +144,9 @@ spec:
       namespace: openebs
     - kind: HelmRelease
       name: "*"
+      namespace: osintgram
+    - kind: HelmRelease
+      name: "*"
       namespace: paperless-ngx
     - kind: HelmRelease
       name: "*"
