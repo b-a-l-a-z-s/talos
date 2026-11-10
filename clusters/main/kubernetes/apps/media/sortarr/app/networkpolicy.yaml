@@ -1,0 +1,82 @@
+---
+# Incoming only from traefik-internal, Homarr: closes the direct, Authentik-free path from other pods
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sortarr-ingress
+  namespace: sortarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: sortarr
+      app.kubernetes.io/name: app-template
+      pod.name: main
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik-internal
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: homarr
+      ports:
+        - protocol: TCP
+          port: 8787
+---
+# Outgoing only to Sonarr, Radarr, Plex, Tracearr and DNS: Sortarr needs no internet
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: sortarr-egress
+  namespace: sortarr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: sortarr
+      app.kubernetes.io/name: app-template
+      pod.name: main
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sonarr
+      ports:
+        - protocol: TCP
+          port: 8989
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: radarr
+      ports:
+        - protocol: TCP
+          port: 7878
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: plex
+      ports:
+        - protocol: TCP
+          port: 32400
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: tracearr
+      ports:
+        - protocol: TCP
+          port: 3000
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

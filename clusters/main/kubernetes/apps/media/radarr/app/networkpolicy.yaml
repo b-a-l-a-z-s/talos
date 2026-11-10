@@ -51,7 +51,7 @@ spec:
               - 100.64.0.0/10
               - 169.254.0.0/16
 ---
-# Incoming only from traefik-internal, Homarr, seerr, prowlarr, profilarr and Prometheus (metrics): closes the direct, Authentik-free path from other pods
+# Incoming only from traefik-internal, Homarr, seerr, prowlarr, profilarr, sortarr and Prometheus (metrics): closes the direct, Authentik-free path from other pods
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -82,6 +82,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: profilarr
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: sortarr
       ports:
         - protocol: TCP
           port: 7878

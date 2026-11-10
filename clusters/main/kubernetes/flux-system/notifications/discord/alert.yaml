@@ -183,6 +183,9 @@ spec:
       namespace: sonarr
     - kind: HelmRelease
       name: "*"
+      namespace: sortarr
+    - kind: HelmRelease
+      name: "*"
       namespace: syncthing
     - kind: HelmRelease
       name: "*"
