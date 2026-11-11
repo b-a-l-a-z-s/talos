@@ -27,7 +27,16 @@ spec:
       stopAll: false
     resources:
       requests:
-        cpu: 10m  
+        cpu: 10m
+    # DoT so the router can't answer in place of the upstreams (ASUS 10.0.0.1 redirect)
+    defaultUpstreams:
+      - tcp-tls:1.1.1.1:853
+      - tcp-tls:1.0.0.1:853
+      - tcp-tls:9.9.9.9:853
+      - tcp-tls:149.112.112.112:853
+      - tcp-tls:8.8.8.8:853
+      - tcp-tls:8.8.4.4:853
+    upstreamTimeout: 2s
     service:
       dns:
         externalTrafficPolicy: Local
