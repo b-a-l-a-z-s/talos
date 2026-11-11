@@ -1,5 +1,5 @@
 ---
-# Incoming only from traefik-internal: the web UI has no login of its own (Authentik in front)
+# Incoming only from traefik-internal, Homarr: the web UI has no login of its own (Authentik in front)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -18,6 +18,9 @@ spec:
         - namespaceSelector:
             matchLabels:
               kubernetes.io/metadata.name: traefik-internal
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: homarr
       ports:
         - protocol: TCP
           port: 8585
