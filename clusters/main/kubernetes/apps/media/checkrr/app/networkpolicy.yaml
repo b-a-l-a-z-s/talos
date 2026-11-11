@@ -1,0 +1,51 @@
+---
+# Incoming only from traefik-internal: the web UI has no login of its own (Authentik in front)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: checkrr-ingress
+  namespace: checkrr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: checkrr
+      app.kubernetes.io/name: app-template
+      pod.name: main
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: traefik-internal
+      ports:
+        - protocol: TCP
+          port: 8585
+---
+# Outgoing only DNS while process: false; Sonarr/Radarr get added with process: true
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: checkrr-egress
+  namespace: checkrr
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/instance: checkrr
+      app.kubernetes.io/name: app-template
+      pod.name: main
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53

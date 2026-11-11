@@ -27,6 +27,9 @@ spec:
       namespace: cert-manager
     - kind: HelmRelease
       name: "*"
+      namespace: checkrr
+    - kind: HelmRelease
+      name: "*"
       namespace: cloudflared
     - kind: HelmRelease
       name: "*"

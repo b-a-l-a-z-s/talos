@@ -1,0 +1,175 @@
+---
+# yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/helm.toolkit.fluxcd.io/helmrelease_v2.json
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: checkrr
+  namespace: checkrr
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: app-template
+      version: 21.3.4
+      sourceRef:
+        kind: HelmRepository
+        name: truecharts
+        namespace: flux-system
+  timeout: 20m
+  valuesFrom:
+    - kind: Secret
+      name: backup-credentials
+      valuesKey: S3URL
+      targetPath: credentials.s3.url
+    - kind: Secret
+      name: backup-credentials
+      valuesKey: BUCKET
+      targetPath: credentials.s3.bucket
+    - kind: Secret
+      name: backup-credentials
+      valuesKey: S3ID
+      targetPath: credentials.s3.accessKey
+    - kind: Secret
+      name: backup-credentials
+      valuesKey: S3KEY
+      targetPath: credentials.s3.secretKey
+    - kind: Secret
+      name: backup-credentials
+      valuesKey: S3KEY
+      targetPath: credentials.s3.encrKey
+  values:
+    global:
+      stopAll: false
+    TZ: Europe/Brussels
+    resources:
+      requests:
+        cpu: 10m
+    image:
+      repository: ghcr.io/aetaric/checkrr
+      pullPolicy: IfNotPresent
+      tag: 3.6.1-amd64@sha256:a2cbd2dfc908fb5620ef1f31e7a99cf9cc706efb1df5fb85e62a33c5d6efcbe3
+    service:
+      main:
+        ports:
+          main:
+            port: 8585
+    workload:
+      main:
+        podSpec:
+          containers:
+            main:
+              args:
+                - -c
+                - /config/checkrr.yaml
+    configmap:
+      config:
+        enabled: true
+        data:
+          # process: false = report only (CSV, log, web UI); Sonarr/Radarr delete nothing
+          checkrr.yaml: |
+            lang: en-us
+            checkrr:
+              checkpath:
+                - /Videos/Series
+                - /Videos/Films
+              database: /config/checkrr.db
+              csvfile: /config/badfiles.csv
+              # 07:00 local, after the nightly backups
+              cron: "0 7 * * *"
+              debug: false
+              ffprobe: true
+              ignorehidden: true
+              ignoreexts:
+                - .txt
+                - .nfo
+                - .nzb
+                - .url
+                - .sfv
+                - .md5
+                - .website
+                - .idx
+                - .sub
+                - .ttf
+            logs:
+              stdout:
+                out: stdout
+                formatter: default
+            arr:
+              sonarr:
+                process: false
+                service: sonarr
+                address: sonarr.sonarr.svc.cluster.local
+                port: 8989
+                baseurl: /
+                ssl: false
+              radarr:
+                process: false
+                service: radarr
+                address: radarr.radarr.svc.cluster.local
+                port: 7878
+                baseurl: /
+                ssl: false
+            webserver:
+              port: 8585
+              tls: false
+              baseurl: /
+              trustedproxies:
+                - 172.16.0.0/16
+    persistence:
+      config:
+        enabled: true
+        mountPath: /config
+        size: 1Gi
+        volsync:
+          - name: b2
+            type: restic
+            credentials: s3
+            dest:
+              enabled: true
+            src:
+              enabled: true
+              trigger:
+                schedule: 33 3 * * *
+      checkrr-config:
+        enabled: true
+        type: configmap
+        objectName: config
+        mountPath: /config/checkrr.yaml
+        subPath: checkrr.yaml
+        readOnly: true
+      # Same paths as in Sonarr/Radarr, so no path mappings are needed
+      series:
+        enabled: true
+        type: nfs
+        server: 192.168.1.49
+        path: /mnt/main/Media/Series
+        mountPath: /Videos/Series
+        readOnly: true
+      films:
+        enabled: true
+        type: nfs
+        server: 192.168.1.49
+        path: /mnt/main/Media/Films
+        mountPath: /Videos/Films
+        readOnly: true
+    ingress:
+      main:
+        enabled: true
+        ingressClassName: internal
+        integrations:
+          traefik:
+            enabled: true
+            middlewares:
+              - name: authentik
+                namespace: traefik-internal
+                expandObjectName: false
+          certManager:
+            enabled: true
+            certificateIssuer: domain-0-le-prod
+          nginx:
+            enabled: false
+        hosts:
+          - host: checkrr.${DOMAIN_0}
+            paths:
+              - path: /
+                pathType: Prefix
