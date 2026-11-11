@@ -72,6 +72,9 @@ spec:
       general:
         default_phone_region: BE
         accessIP: ${NGINX_EXTERNAL_IP}
+      # Trash items are deleted 90 days after deletion (earlier only if a user runs out of space)
+      expirations:
+        trash_retention_obligation: "auto, 90"
       # Memories' recommended providers, rendered locally (Imagick, ffmpeg) instead of by Imaginary
       previews:
         imaginary: false
