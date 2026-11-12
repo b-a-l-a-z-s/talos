@@ -37,6 +37,14 @@ spec:
       name: backup-credentials
       valuesKey: S3KEY
       targetPath: credentials.s3.encrKey
+    - kind: Secret
+      name: checkrr-values
+      valuesKey: SONARR_API_KEY
+      targetPath: arrKeys.sonarr
+    - kind: Secret
+      name: checkrr-values
+      valuesKey: RADARR_API_KEY
+      targetPath: arrKeys.radarr
   values:
     global:
       stopAll: false
@@ -61,11 +69,12 @@ spec:
               args:
                 - -c
                 - /config/checkrr.yaml
-    configmap:
+    # A Secret, not a ConfigMap: the API keys (valuesFrom) are filled in here
+    secret:
       config:
         enabled: true
         data:
-          # process: false = report only (CSV, log, web UI); Sonarr/Radarr delete nothing
+          # process: true = Sonarr/Radarr delete a bad file (recycle bin, 30 days) and search again
           checkrr.yaml: |
             lang: en-us
             checkrr:
@@ -98,17 +107,19 @@ spec:
                 formatter: default
             arr:
               sonarr:
-                process: false
+                process: true
                 service: sonarr
                 address: sonarr.sonarr.svc.cluster.local
                 port: 8989
+                apikey: "{{ .Values.arrKeys.sonarr }}"
                 baseurl: /
                 ssl: false
               radarr:
-                process: false
+                process: true
                 service: radarr
                 address: radarr.radarr.svc.cluster.local
                 port: 7878
+                apikey: "{{ .Values.arrKeys.radarr }}"
                 baseurl: /
                 ssl: false
             webserver:
@@ -134,7 +145,7 @@ spec:
                 schedule: 33 3 * * *
       checkrr-config:
         enabled: true
-        type: configmap
+        type: secret
         objectName: config
         mountPath: /config/checkrr.yaml
         subPath: checkrr.yaml
