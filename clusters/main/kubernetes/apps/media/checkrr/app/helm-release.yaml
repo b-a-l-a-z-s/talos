@@ -90,6 +90,7 @@ spec:
                 - .idx
                 - .sub
                 - .srt
+                - .m2ts
                 - .ttf
             logs:
               stdout:
