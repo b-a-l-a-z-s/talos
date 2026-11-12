@@ -89,6 +89,7 @@ spec:
                 - .website
                 - .idx
                 - .sub
+                - .srt
                 - .ttf
             logs:
               stdout:
