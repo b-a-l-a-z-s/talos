@@ -25,7 +25,7 @@ spec:
         - protocol: TCP
           port: 8585
 ---
-# Outgoing only DNS and the Sonarr/Radarr APIs (process: true)
+# Outgoing only DNS, the Sonarr/Radarr APIs (process: true) and HTTPS to the internet (Discord webhook)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -54,6 +54,18 @@ spec:
       ports:
         - protocol: TCP
           port: 7878
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except:
+              - 10.0.0.0/8
+              - 172.16.0.0/12
+              - 192.168.0.0/16
+              - 100.64.0.0/10
+              - 169.254.0.0/16
+      ports:
+        - protocol: TCP
+          port: 443
     - to:
         - namespaceSelector:
             matchLabels:

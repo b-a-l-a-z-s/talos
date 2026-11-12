@@ -45,6 +45,10 @@ spec:
       name: checkrr-values
       valuesKey: RADARR_API_KEY
       targetPath: arrKeys.radarr
+    - kind: Secret
+      name: checkrr-values
+      valuesKey: CHECKRR_DISCORD_WEBHOOK
+      targetPath: checkrrNotify.discord
   values:
     global:
       stopAll: false
@@ -122,6 +126,12 @@ spec:
                 apikey: "{{ .Values.arrKeys.radarr }}"
                 baseurl: /
                 ssl: false
+            notifications:
+              discord:
+                url: "{{ .Values.checkrrNotify.discord }}"
+                notificationtypes:
+                  - reacquire
+                  - unknowndetected
             webserver:
               port: 8585
               tls: false
