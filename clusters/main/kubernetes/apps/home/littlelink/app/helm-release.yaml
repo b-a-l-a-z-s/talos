@@ -31,13 +31,25 @@ spec:
               --border-color: #292929;
               --button-border-style: none;
             }
+            /* page.js adds a random photo from the "background" Worker; without it only the dark colour */
             body {
-              background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url("https://picsum.photos/1920/1080") center / cover fixed;
+              background: var(--bg-color) linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)) center / cover fixed;
+            }
+            .photo-credit {
+              position: fixed;
+              right: 10px;
+              bottom: 6px;
+              font-size: 11px;
+              color: rgba(255, 255, 255, 0.75);
+              text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+            }
+            .photo-credit a {
+              color: inherit;
             }
             #root {
               padding-top: 6vh;
             }
-            /* Click/tap the avatar to switch to a QR code of this page and back (qr-toggle.js, qr.secret.yaml) */
+            /* Click/tap the avatar to switch to a QR code of this page and back (page.js, qr.secret.yaml) */
             img.avatar {
               cursor: pointer;
               transform-origin: center bottom;
@@ -49,7 +61,40 @@ spec:
               border-radius: 8px;
               transform: scale(1.5);
             }
-          qr-toggle.js: |
+          page.js: |
+            // Random Unsplash photo as background, with the photographer credit Unsplash asks for
+            (function () {
+              function link(text, href) {
+                var a = document.createElement('a');
+                a.href = href;
+                a.textContent = text;
+                a.target = '_blank';
+                a.rel = 'noopener';
+                return a;
+              }
+              function setBackground() {
+                fetch('https://background.b-a-l-a-z-s.workers.dev/photo.json', { cache: 'no-store' })
+                  .then(function (r) { return r.json(); })
+                  .then(function (p) {
+                    var img = new Image();
+                    img.onload = function () {
+                      document.body.style.backgroundImage =
+                        'linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), url("' + p.image + '")';
+                    };
+                    img.src = p.image;
+                    if (!p.name) return;
+                    var credit = document.createElement('div');
+                    credit.className = 'photo-credit';
+                    credit.append(link('Photo', p.link), ' by ', link(p.name, p.profile), ' on ',
+                      link('Unsplash', 'https://unsplash.com/?utm_source=homelab_background&utm_medium=referral'));
+                    document.body.appendChild(credit);
+                  })
+                  .catch(function () {});
+              }
+              if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setBackground);
+              else setBackground();
+            })();
+            // Click/tap the avatar to switch to a QR code of this page and back
             document.addEventListener('click', function (e) {
               var avatar = e.target.closest && e.target.closest('img.avatar');
               if (avatar) avatar.classList.toggle('show-qr');
@@ -62,12 +107,12 @@ spec:
         mountPath: /usr/src/app/build/public/css/dark.css
         subPath: dark.css
         readOnly: true
-      qr-toggle:
+      page-js:
         enabled: true
         type: configmap
         objectName: theme
-        mountPath: /usr/src/app/build/public/qr-toggle.js
-        subPath: qr-toggle.js
+        mountPath: /usr/src/app/build/public/page.js
+        subPath: page.js
         readOnly: true
       qr:
         enabled: true
@@ -102,8 +147,8 @@ spec:
                 CUSTOM_BUTTON_TEXT_COLOR: "#FFFFFF"
                 CUSTOM_BUTTON_ALT_TEXT: Memories photo gallery
                 CUSTOM_BUTTON_ICON: fas fa-images
-                # No analytics: the Plausible script slot is the only way to load our own JS (qr-toggle.js)
-                PLAUSIBLE_URL: /qr-toggle.js
+                # No analytics: the Plausible script slot is the only way to load our own JS (page.js)
+                PLAUSIBLE_URL: /page.js
                 PLAUSIBLE_DATA_DOMAIN: none
                 PLAUSIBLE_DATA_API: none
                 GITHUB: https://github.com/b-a-l-a-z-s
