@@ -47,7 +47,7 @@ spec:
     matchExpressions:
       - key: tailscale.com/parent-resource
         operator: In
-        values: [family-pc, christine-big]
+        values: [family-pc, christine-big, christine-travel]
   policyTypes:
     - Ingress
   ingress:
