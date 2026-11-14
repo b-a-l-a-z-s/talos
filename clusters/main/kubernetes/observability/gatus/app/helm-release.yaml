@@ -22,6 +22,10 @@ spec:
     resources:
       requests:
         cpu: 10m
+    # Gatus metrics are off (404), so drop the chart's ServiceMonitor
+    metrics:
+      main:
+        enabled: false
     # Origin for the public page, which is served by the "status" Cloudflare Worker
     # (scripts/cloudflare/status-proxy.js). Cloudflare blocks direct requests to this host unless
     # they carry the Worker's secret header, so the page is only reachable via workers.dev.
