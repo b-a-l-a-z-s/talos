@@ -60,6 +60,14 @@ spec:
       serverIP: ${PLEX_IP}
       disableGDM: true
       requireHTTPS: false
+    # Treat the home LAN as local (Plex only sees its pod subnet otherwise)
+    workload:
+      main:
+        podSpec:
+          containers:
+            main:
+              env:
+                PLEX_PREFERENCE_LAN: LanNetworksBandwidth=192.168.1.0/24
     service:
       main:
         type: LoadBalancer
