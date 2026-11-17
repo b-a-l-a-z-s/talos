@@ -20,7 +20,7 @@ spec:
     image:
       repository: docker.io/soxoj/maigret
       pullPolicy: IfNotPresent
-      tag: web@sha256:59f863656ba8de1046359fce48ee875d1e6993687d92c16864697bac1c655d6b
+      tag: web@sha256:14a80b25f48b7cc4a3c480109e1ebb97d1419c65694cb2f284aa77f7a3e50aa7
     resources:
       requests:
         cpu: 10m
