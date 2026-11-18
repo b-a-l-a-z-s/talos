@@ -82,14 +82,14 @@
         "addLabels": ["automerge"]
       },
       {
-        // All 9 databases back up through spec.backup.barmanObjectStore (set by the TrueCharts cnpg
-        // template), which CloudNativePG removes in 1.31. Migrate to the Barman Cloud Plugin first.
+        // All databases back up through spec.backup.barmanObjectStore (set by the TrueCharts cnpg
+        // template), which CloudNativePG removes in 1.32. Migrate to the Barman Cloud Plugin first.
         "description": ["CloudNativePG operator: manual merge for any update, with a backup warning"],
         "matchPackageNames": ["/cloudnative-pg/"],
         "automerge": false,
         "addLabels": ["needs-manual-merge", "cnpg-backup-warning"],
         "prBodyNotes": [
-          "⚠️ **CloudNativePG 1.31 removes the built-in Barman Cloud backups** (`spec.backup.barmanObjectStore`), which all CNPG databases in this cluster use for their nightly S3 backups and restores. Before merging an update that brings the operator to 1.31 or later, move the clusters to the Barman Cloud Plugin, or the database backups stop."
+          "⚠️ **CloudNativePG 1.32 removes the built-in Barman Cloud backups** (`spec.backup.barmanObjectStore`), which all CNPG databases in this cluster use for their nightly S3 backups and restores. Before merging an update that brings the operator to 1.32 or later, move the clusters to the Barman Cloud Plugin, or the database backups stop."
         ]
       },
       // ---------------------------------------------------------------------------------------------
