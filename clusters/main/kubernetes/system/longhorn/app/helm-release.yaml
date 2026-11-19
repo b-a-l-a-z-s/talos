@@ -24,6 +24,8 @@ spec:
       storageOverProvisioningPercentage: "100000"
       # v2DataEngine: true
       guaranteedInstanceManagerCPU: 5
+      # Max (default 8 s): ride out disk stalls instead of faulting single-replica volumes
+      engineReplicaTimeout: "30"
       storageReservedPercentageForDefaultDisk: "10"
     persistence:
       # Set to false to pick another CSI as default
