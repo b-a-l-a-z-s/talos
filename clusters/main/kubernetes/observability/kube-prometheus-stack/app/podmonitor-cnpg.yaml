@@ -16,5 +16,5 @@ spec:
     - port: metrics
       metricRelabelings:
         - sourceLabels: [__name__]
-          regex: cnpg_collector_.*|cnpg_pg_stat_archiver_.*
+          regex: cnpg_collector_.*|cnpg_pg_stat_archiver_.*|barman_cloud_cloudnative_pg_io_.*
           action: keep

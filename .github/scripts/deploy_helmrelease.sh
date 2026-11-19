@@ -3,7 +3,8 @@
 # .github/workflows/helmrelease-test.yaml, which gates Renovate auto-merges).
 # Adjustments so this repo's charts install in k3d:
 #   - installs Traefik CRDs (TrueCharts ingress integration renders traefik.io Middlewares)
-#   - strips CNPG backup/recovery settings but keeps the database itself
+#   - strips CNPG backup/recovery settings (cnpg.* and common-2026 dependencies.postgresql) but keeps the database
+#   - installs the CNPG operator and the cert-manager controller for CNPG-I plugins (plugin-barman-cloud)
 #   - rewrites storage classes that don't exist in k3d (openebs-hostpath, longhorn) to local-path
 #   - skips dependency charts this repo doesn't have instead of failing
 #   - creates the other namespaces the chart writes into (clusterissuer: cert-manager)
@@ -175,6 +176,29 @@ install_cnpg_operator() {
     --timeout 5m
   echo "🗄️ Done installing CloudNativePG operator"
   echo "::endgroup::"
+}
+
+# Charts with their own self-signed Issuer (plugin-barman-cloud) mount the issued Secrets, so their
+# pods only start with the real cert-manager controller, not just its CRDs
+install_certmanager_controller() {
+  local helmrelease_path="clusters/main/kubernetes/system/cert-manager/app/helm-release.yaml"
+
+  resolve_dependency_chart "$helmrelease_path"
+
+  echo "::group::🔐 Installing cert-manager (${DEPENDENCY_CHART_VERSION})..."
+  helm install cert-manager "$DEPENDENCY_CHART_REF" \
+    --version "$DEPENDENCY_CHART_VERSION" \
+    --namespace cert-manager \
+    --create-namespace \
+    --set crds.enabled=true \
+    --wait \
+    --timeout 5m
+  echo "🔐 Done installing cert-manager"
+  echo "::endgroup::"
+}
+
+rendered_has() {
+  yq ea -e "select($1)" "$RENDERED" >/dev/null 2>&1
 }
 
 rendered_uses_api_group() {
@@ -380,6 +404,13 @@ if yq -e '[.cnpg[]? | (has("backups") or has("recovery") or has("mode"))] | any'
   changed=true
 fi
 
+# Same for charts on TrueCharts common-2026, which configure CNPG under dependencies.postgresql.operator
+if yq -e '(.dependencies.postgresql.operator // {}) | (has("backups") or has("recovery") or has("mode"))' "$VALUES_FILE" >/dev/null 2>&1; then
+  yq -i 'del(.dependencies.postgresql.operator.backups) | del(.dependencies.postgresql.operator.recovery) | del(.dependencies.postgresql.operator.mode)' "$VALUES_FILE"
+  echo "      ⚠️ CNPG backups/recovery removed for CI (dependencies.postgresql)"
+  changed=true
+fi
+
 # Storage classes that only exist in the real cluster -> k3d's local-path
 if yq -e '.. | select(type == "!!map" and ((.storageClassName? // "") == "openebs-hostpath" or (.storageClassName? // "") == "longhorn" or (.storageClass? // "") == "openebs-hostpath" or (.storageClass? // "") == "longhorn"))' "$VALUES_FILE" >/dev/null 2>&1; then
   yq -i '
@@ -453,8 +484,13 @@ install_grafana=false
 install_nfd=false
 install_traefik=false
 
+install_certmanager_controller=false
+
 rendered_uses_api_group "postgresql.cnpg.io" && install_cnpg=true
+# CNPG-I plugins (plugin-barman-cloud) register with the operator through a labelled Service
+rendered_has '.kind == "Service" and .metadata.labels["cnpg.io/pluginName"] != null' && install_cnpg=true
 rendered_uses_api_group "cert-manager.io" && install_certmanager=true
+rendered_has '.kind == "Issuer" and .spec.selfSigned != null' && install_certmanager_controller=true
 rendered_uses_api_group "monitoring.coreos.com" && install_prometheus=true
 rendered_uses_api_group "metallb.io" && install_metallb=true
 rendered_uses_api_group "gateway.networking.k8s.io" && install_gateway=true
@@ -464,7 +500,7 @@ rendered_uses_api_group "traefik.io" && install_traefik=true
 
 echo "🔎 Dependencies:"
 echo "     CNPG:        $install_cnpg"
-echo "     CertManager: $install_certmanager"
+echo "     CertManager: $install_certmanager (controller: $install_certmanager_controller)"
 echo "     Prometheus:  $install_prometheus"
 echo "     MetalLB:     $install_metallb"
 echo "     Gateway API: $install_gateway"
@@ -480,7 +516,9 @@ if $install_cnpg; then
   install_cnpg_operator
 fi
 
-if $install_certmanager; then
+if $install_certmanager_controller; then
+  install_certmanager_controller
+elif $install_certmanager; then
   install_dependency_crds \
     "cert-manager" \
     "🔐" \

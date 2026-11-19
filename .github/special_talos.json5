@@ -85,11 +85,27 @@
         // All databases back up through spec.backup.barmanObjectStore (set by the TrueCharts cnpg
         // template), which CloudNativePG removes in 1.32. Migrate to the Barman Cloud Plugin first.
         "description": ["CloudNativePG operator: manual merge for any update, with a backup warning"],
-        "matchPackageNames": ["/cloudnative-pg/"],
+        "matchPackageNames": ["/cloudnative-pg/", "!/plugin-barman-cloud/"],
         "automerge": false,
         "addLabels": ["needs-manual-merge", "cnpg-backup-warning"],
         "prBodyNotes": [
           "⚠️ **CloudNativePG 1.32 removes the built-in Barman Cloud backups** (`spec.backup.barmanObjectStore`), which all CNPG databases in this cluster use for their nightly S3 backups and restores. Before merging an update that brings the operator to 1.32 or later, move the clusters to the Barman Cloud Plugin, or the database backups stop."
+        ]
+      },
+      {
+        // Its sidecar runs in every Postgres pod once the databases use it
+        "description": ["Barman Cloud Plugin (CNPG backups): manual merge for any update"],
+        "matchPackageNames": ["/plugin-barman-cloud/"],
+        "automerge": false,
+        "addLabels": ["needs-manual-merge"]
+      },
+      {
+        // TrueCharts moves charts to common-2026 (common 32) one by one, always as a major update
+        "description": ["TrueCharts major updates: common-2026 migration checklist"],
+        "matchPackageNames": ["/trueforge\\.org\\/truecharts\\//"],
+        "matchUpdateTypes": ["major"],
+        "prBodyNotes": [
+          "⚠️ **TrueCharts major update: check whether it moves the chart to common-2026** (common `32.x` in the chart's `Chart.yaml` dependencies). If it does, it is a breaking migration: unknown or removed values keys fail the render; `cnpg` moves to `dependencies.postgresql` (pin `operator.pgVersion` to 16 or PostgreSQL jumps to 18, keep `destinationPath`, `serverName` and `revision`, and set `depconfig.postgresqlUsername`/`postgresqlDatabase` when they are not `app`); `redis` moves to `dependencies.valkey`; the `cnpg-main-*` and `*-rediscreds` Secrets are replaced by `<release>-postgresqlcreds` and `depconfig.creds`; database backups need the Barman Cloud Plugin; and **MariaDB, MongoDB and ClickHouse data is not migrated**, so dump it first. Details: https://truecharts.org/news/truecharts/common-2026/"
         ]
       },
       // ---------------------------------------------------------------------------------------------
