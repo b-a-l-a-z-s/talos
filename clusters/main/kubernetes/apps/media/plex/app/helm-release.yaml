@@ -93,7 +93,9 @@ spec:
         path: /mnt/main/Media/
         mountPath: /media
         server: 192.168.1.49
-        type: nfs      
+        type: nfs
+        # Plex only reads media; limits the damage if it is ever compromised
+        readOnly: true
     ingress:
         main:
           enabled: true
