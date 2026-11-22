@@ -110,6 +110,10 @@ spec:
           # One Postgres pod instead of the chart's two: a replica on the same node adds
           # no availability, and the nightly backup to S3 covers the data.
           instances: 1
+          # botocore retry settings: B2 503s on backup uploads (default: 4 retries)
+          env:
+            AWS_RETRY_MODE: standard
+            AWS_MAX_ATTEMPTS: "10"
         #mode: recovery
         backups:
           enabled: true
