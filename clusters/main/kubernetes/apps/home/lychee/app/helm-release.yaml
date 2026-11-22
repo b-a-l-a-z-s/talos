@@ -385,6 +385,10 @@ spec:
         cluster:
           singleNode: true
           instances: 1
+          # botocore retry settings: B2 503s on backup uploads (default: 4 retries)
+          env:
+            AWS_RETRY_MODE: standard
+            AWS_MAX_ATTEMPTS: "10"
         backups:
           enabled: true
           credentials: s3
