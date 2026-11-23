@@ -58,7 +58,7 @@ spec:
               type: RuntimeDefault
           containers:
             - name: retry
-              image: alpine/kubectl:1.37.2
+              image: alpine/kubectl:1.37.2@sha256:06c6e028a77b54849182acb93e77f91f6312db02c6232e053212add91309349a
               env:
                 - name: HOME
                   value: /tmp
