@@ -4,3 +4,4 @@ resources:
   - helm-release.yaml
   - priorityclass.yaml
   - postgres-priority-policy.yaml
+  - backup-retry.yaml

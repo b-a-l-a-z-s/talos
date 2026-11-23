@@ -1,0 +1,106 @@
+---
+# Re-runs CNPG backups that failed overnight (B2 503s on UploadPart), after the backup chain ends at 04:47 UTC.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cnpg-backup-retry
+  namespace: cloudnative-pg
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cnpg-backup-retry
+rules:
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["clusters"]
+    verbs: ["get", "list"]
+  - apiGroups: ["postgresql.cnpg.io"]
+    resources: ["backups"]
+    verbs: ["get", "create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cnpg-backup-retry
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cnpg-backup-retry
+subjects:
+  - kind: ServiceAccount
+    name: cnpg-backup-retry
+    namespace: cloudnative-pg
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: cnpg-backup-retry
+  namespace: cloudnative-pg
+spec:
+  schedule: "54 4 * * *"
+  timeZone: Etc/UTC
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 10800
+      template:
+        spec:
+          serviceAccountName: cnpg-backup-retry
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            runAsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: retry
+              image: alpine/kubectl:1.37.2
+              env:
+                - name: HOME
+                  value: /tmp
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 32Mi
+                limits:
+                  memory: 128Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: ["ALL"]
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              command: ["/bin/sh", "-c"]
+              args:
+                - |
+                  set -u
+                  failed=$(kubectl get clusters.postgresql.cnpg.io -A -o jsonpath='{range .items[*]}{.metadata.namespace}/{.metadata.name} {.status.conditions[?(@.type=="LastBackupSucceeded")].status}{"\n"}{end}' | awk '$2=="False"{print $1}')
+                  [ -z "$failed" ] && { echo "All CNPG backups OK"; exit 0; }
+                  rc=0
+                  for c in $failed; do
+                    ns=$(echo "$c" | cut -d/ -f1); cl=$(echo "$c" | cut -d/ -f2); ok=""
+                    for n in 1 2 3; do
+                      name="$cl-retry-$(date -u +%Y%m%d%H%M)"
+                      printf 'apiVersion: postgresql.cnpg.io/v1\nkind: Backup\nmetadata: {name: %s, namespace: %s}\nspec: {cluster: {name: %s}, method: barmanObjectStore}\n' "$name" "$ns" "$cl" | kubectl create -f - 2>/dev/null || { echo "$c: create failed"; break; }
+                      phase=timeout
+                      for i in $(seq 1 90); do
+                        sleep 10
+                        phase=$(kubectl get backups.postgresql.cnpg.io -n "$ns" "$name" -o jsonpath='{.status.phase}')
+                        case "$phase" in completed|failed) break;; esac
+                      done
+                      echo "$c try $n: $phase"
+                      [ "$phase" = completed ] && { ok=1; break; }
+                      [ "$n" -lt 3 ] && sleep 600
+                    done
+                    [ -n "$ok" ] || rc=1
+                  done
+                  exit $rc
+          volumes:
+            - name: tmp
+              emptyDir: {}

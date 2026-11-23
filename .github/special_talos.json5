@@ -2,7 +2,10 @@
     "$schema": "https://docs.renovatebot.com/renovate-schema.json",
     // Plain manifests (not HelmReleases) whose images Renovate should track
     "kubernetes": {
-      "managerFilePatterns": ["clusters/main/kubernetes/apps/security/pihole/app/exporter.yaml"]
+      "managerFilePatterns": [
+        "clusters/main/kubernetes/apps/security/pihole/app/exporter.yaml",
+        "clusters/main/kubernetes/system/cloudnative-pg/app/backup-retry.yaml"
+      ]
     },
     "packageRules": [
       // ---------------------------------------------------------------------------------------------
