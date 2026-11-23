@@ -51,7 +51,7 @@ spec:
     proxyImage:
       repository: docker.io/library/traefik
       pullPolicy: IfNotPresent
-      tag: v3.7.20@sha256:f454571dee2afa1fc77287d811e92ce3c4353e82802116b0622a3665322b63aa
+      tag: v3.8.0@sha256:cd3078e07dfe0c551b1df6fca2697c52f35da0a18c7bd81da4d3b1f012405098
     # traefik-internal reaches a Traefik sidecar, so Sortarr always sees 127.0.0.1 as its proxy
     service:
       main:
