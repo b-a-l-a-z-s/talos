@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: blocky
-      version: 24.5.1
+      version: 25.0.0
       sourceRef:
         kind: HelmRepository
         name: truecharts
@@ -19,7 +19,7 @@ spec:
     - kind: Secret
       name: blocky-values
       valuesKey: BLOCKY_REDIS_PWD
-      targetPath: redis.password
+      targetPath: dependencies.valkey.depconfig.password
   values:
     ## set stopAll to "true" if you do not want to use blocky
     # and/or disable its service
@@ -80,10 +80,11 @@ spec:
     configmap:
       dashboard:
         enabled: false
+    secret:
       datasource:
         enabled: false
 
-    cnpg:
-      main:
+    dependencies:
+      postgresql:
         enabled: false
 
