@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: mealie
-      version: 28.4.0
+      version: 29.0.0
       sourceRef:
         kind: HelmRepository
         name: truecharts
@@ -40,7 +40,7 @@ spec:
     - kind: Secret
       name: mealie-values
       valuesKey: mealie_CNPG_PWD
-      targetPath: cnpg.main.password
+      targetPath: dependencies.postgresql.depconfig.password
     - kind: Secret
       name: mealie-values
       valuesKey: mealie_SMTP_PWD
@@ -64,31 +64,39 @@ spec:
               enabled: true
               trigger:
                 schedule: 52 0 * * *
-    cnpg:
-      main:
-        cluster:
-          singleNode: true
-          # One Postgres pod instead of the chart's two: a replica on the same node adds
-          # no availability, and the nightly backup to S3 covers the data.
-          instances: 1
-          # botocore retry settings: B2 503s on backup uploads (default: 4 retries)
-          env:
-            AWS_RETRY_MODE: standard
-            AWS_MAX_ATTEMPTS: "10"
-        #mode: recovery
-        backups:
-          enabled: true
-          credentials: s3
-          scheduledBackups:
-            - name: daily-backup
-              schedule: "0 59 0 * * *"
-              backupOwnerReference: self
-              immediate: true
-              suspend: false
-          retentionPolicy: "7d"
-        recovery:
-          method: object_store
-          credentials: s3
+    dependencies:
+      postgresql:
+        operator:
+          # Pinned: the chart default is 18; upgrading is a separate step
+          pgVersion: 16
+          cluster:
+            singleNode: true
+            # One Postgres pod instead of the chart's two: a replica on the same node adds
+            # no availability, and the nightly backup to S3 covers the data.
+            instances: 1
+          #mode: recovery
+          backups:
+            enabled: true
+            credentials: s3
+            scheduledBackups:
+              - name: daily-backup
+                schedule: "0 59 0 * * *"
+                backupOwnerReference: self
+                immediate: true
+                suspend: false
+            revision: "1"
+            retentionPolicy: "7d"
+            # botocore retry settings in the Barman sidecar: B2 503s on backup uploads (default: 4 retries)
+            instanceSidecarConfiguration:
+              env:
+                - name: AWS_RETRY_MODE
+                  value: standard
+                - name: AWS_MAX_ATTEMPTS
+                  value: "10"
+          recovery:
+            method: object_store
+            credentials: s3
+            revision: "0"
     ingress:
         main:
           enabled: true
