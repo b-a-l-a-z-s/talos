@@ -1,0 +1,7 @@
+# Default trigger (podruntime stall >5%) killed longhorn-manager during image pulls with 16 GB free; raised to 25%.
+apiVersion: v1alpha1
+kind: OOMConfig
+triggerExpression: |-
+  multiply_qos_vectors(d_qos_memory_full_total, {System: 8.0, Podruntime: 4.0}) > 3000.0 &&
+  multiply_qos_vectors(qos_memory_full_avg10, {System: 1.0, Podruntime: 1.0}) > 25.0 &&
+  time_since_trigger > duration("5s")
