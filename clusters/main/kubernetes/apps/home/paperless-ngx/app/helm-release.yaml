@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: paperless-ngx
-      version: 18.6.3
+      version: 19.0.0
       sourceRef:
         kind: HelmRepository
         name: truecharts
@@ -40,11 +40,11 @@ spec:
     - kind: Secret
       name: paperless-ngx-values
       valuesKey: PAPERLESS_CNPG_PWD
-      targetPath: cnpg.main.password
+      targetPath: dependencies.postgresql.depconfig.password
     - kind: Secret
       name: paperless-ngx-values
       valuesKey: PAPERLESS_REDIS_PWD
-      targetPath: redis.password
+      targetPath: dependencies.valkey.depconfig.password
     - kind: Secret
       name: paperless-ngx-values
       valuesKey: PAPERLESS_ADM_PWD
@@ -80,31 +80,39 @@ spec:
         server: 192.168.1.49
         path: /mnt/main/apps/paperless-ngx/media
         mountPath: /media                     
-    cnpg:
-      main:
-        cluster:
-          singleNode: true
-          # One Postgres pod instead of the chart's two: a replica on the same node adds
-          # no availability, and the nightly backup to S3 covers the data.
-          instances: 1
-          # botocore retry settings: B2 503s on backup uploads (default: 4 retries)
-          env:
-            AWS_RETRY_MODE: standard
-            AWS_MAX_ATTEMPTS: "10"
-        #mode: recovery
-        backups:
-          enabled: true
-          credentials: s3
-          scheduledBackups:
-            - name: daily-backup
-              schedule: "0 27 1 * * *"
-              backupOwnerReference: self
-              immediate: true
-              suspend: false
-          retentionPolicy: "7d"
-        recovery:
-          method: object_store
-          credentials: s3
+    dependencies:
+      postgresql:
+        operator:
+          # Pinned: the chart default is 18; upgrading is a separate step
+          pgVersion: 16
+          cluster:
+            singleNode: true
+            # One Postgres pod instead of the chart's two: a replica on the same node adds
+            # no availability, and the nightly backup to S3 covers the data.
+            instances: 1
+          #mode: recovery
+          backups:
+            enabled: true
+            credentials: s3
+            scheduledBackups:
+              - name: daily-backup
+                schedule: "0 27 1 * * *"
+                backupOwnerReference: self
+                immediate: true
+                suspend: false
+            revision: "1"
+            retentionPolicy: "7d"
+            # botocore retry settings in the Barman sidecar: B2 503s on backup uploads (default: 4 retries)
+            instanceSidecarConfiguration:
+              env:
+                - name: AWS_RETRY_MODE
+                  value: standard
+                - name: AWS_MAX_ATTEMPTS
+                  value: "10"
+          recovery:
+            method: object_store
+            credentials: s3
+            revision: "0"
     tika:
       enabled: true
     workload:

@@ -1,5 +1,5 @@
 ---
-# Paperless parses untrusted documents: it can only reach its Postgres, Redis, Gotenberg, Tika, DNS
+# Paperless parses untrusted documents: it can only reach its Postgres, Valkey, Gotenberg, Tika, DNS
 # and the public internet (Gmail IMAP), not the LAN or other apps. Incoming is unchanged.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -26,7 +26,8 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/instance: paperless-ngx
-              app.kubernetes.io/name: redis
+              app.kubernetes.io/name: paperless-ngx
+              pod.name: valkey-main
       ports:
         - protocol: TCP
           port: 6379
@@ -117,17 +118,18 @@ spec:
         - protocol: TCP
           port: 9187
 ---
-# Redis only accepts paperless-ngx's pods
+# Valkey only accepts paperless-ngx's pods
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: paperless-ngx-redis
+  name: paperless-ngx-valkey
   namespace: paperless-ngx
 spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/instance: paperless-ngx
-      app.kubernetes.io/name: redis
+      app.kubernetes.io/name: paperless-ngx
+      pod.name: valkey-main
   policyTypes:
     - Ingress
   ingress:
@@ -165,7 +167,7 @@ spec:
         - protocol: TCP
           port: 8000
 ---
-# Gotenberg and Tika only accept Paperless; out only to DNS, Postgres and Redis (the chart's startup
+# Gotenberg and Tika only accept Paperless; out only to DNS, Postgres and Valkey (the chart's startup
 # checks), never the internet, so rendered mails load no remote content
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -203,7 +205,8 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/instance: paperless-ngx
-              app.kubernetes.io/name: redis
+              app.kubernetes.io/name: paperless-ngx
+              pod.name: valkey-main
       ports:
         - protocol: TCP
           port: 6379
@@ -256,7 +259,8 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/instance: paperless-ngx
-              app.kubernetes.io/name: redis
+              app.kubernetes.io/name: paperless-ngx
+              pod.name: valkey-main
       ports:
         - protocol: TCP
           port: 6379
