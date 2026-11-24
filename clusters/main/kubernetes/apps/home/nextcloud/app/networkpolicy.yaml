@@ -1,5 +1,5 @@
 ---
-# Nextcloud's own pods (app, nginx, Collabora, Imaginary, notify_push, Redis, cron jobs) talk freely
+# Nextcloud's own pods (app, nginx, Collabora, Imaginary, notify_push, Valkey, cron jobs) talk freely
 # to each other. From outside: traefik-external (web and Collabora), Homarr's status check and
 # Lychee's sync CronJob (WebDAV).
 # Out: its Postgres, DNS, traefik-external (own URL), the TrueNAS SMB share and the public internet.
