@@ -84,6 +84,23 @@ spec:
           // Strip the containerd (CRI) prefix: timestamp, stream, flags
           loki.process "pods" {
             stage.cri {}
+
+            // Tracearr runs without TimescaleDB, so its aggregate refresh logs ~40-line stack
+            // traces all day: join each record into one entry, then drop those entries
+            stage.match {
+              selector = "{namespace=\"tracearr\"}"
+
+              stage.multiline {
+                firstline     = `^[\[{A-Z]`
+                max_wait_time = "3s"
+              }
+
+              stage.drop {
+                expression          = "refresh_continuous_aggregate"
+                drop_counter_reason = "tracearr_timescale"
+              }
+            }
+
             forward_to = [loki.write.default.receiver]
           }
 
