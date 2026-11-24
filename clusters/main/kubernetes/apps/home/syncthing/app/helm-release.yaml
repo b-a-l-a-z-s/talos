@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: syncthing
-      version: 24.1.4
+      version: 25.0.0
       sourceRef:
         kind: HelmRepository
         name: truecharts
