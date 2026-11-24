@@ -31,7 +31,8 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/instance: wordpress
-              app.kubernetes.io/name: mariadb
+              app.kubernetes.io/name: wordpress
+              pod.name: mariadb-main
       ports:
         - protocol: TCP
           port: 3306
@@ -68,7 +69,8 @@ spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/instance: wordpress
-      app.kubernetes.io/name: mariadb
+      app.kubernetes.io/name: wordpress
+      pod.name: mariadb-main
   policyTypes:
     - Ingress
   ingress:
@@ -77,6 +79,7 @@ spec:
             matchLabels:
               app.kubernetes.io/instance: wordpress
               app.kubernetes.io/name: wordpress
+              pod.name: main
       ports:
         - protocol: TCP
           port: 3306

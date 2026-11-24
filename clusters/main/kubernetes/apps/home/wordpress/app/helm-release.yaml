@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: wordpress
-      version: 15.2.6
+      version: 16.0.0
       sourceRef:
         kind: HelmRepository
         name: truecharts
@@ -50,31 +50,11 @@ spec:
     - kind: Secret
       name: wordpress-values
       valuesKey: WORDPRESS_MARIADB_PWD
-      targetPath: mariadb.password
+      targetPath: dependencies.mariadb.depconfig.password
     - kind: Secret
       name: wordpress-values
       valuesKey: WORDPRESS_MARIADB_ROOT_PWD
-      targetPath: mariadb.rootPassword
-    - kind: Secret
-      name: backup-credentials
-      valuesKey: S3URL
-      targetPath: mariadb.credentials.s3.url
-    - kind: Secret
-      name: backup-credentials
-      valuesKey: BUCKET
-      targetPath: mariadb.credentials.s3.bucket
-    - kind: Secret
-      name: backup-credentials
-      valuesKey: S3ID
-      targetPath: mariadb.credentials.s3.accessKey
-    - kind: Secret
-      name: backup-credentials
-      valuesKey: S3KEY
-      targetPath: mariadb.credentials.s3.secretKey
-    - kind: Secret
-      name: backup-credentials
-      valuesKey: S3KEY
-      targetPath: mariadb.credentials.s3.encrKey
+      targetPath: dependencies.mariadb.depconfig.rootPassword
   values:
     global:
       stopAll: false
@@ -135,23 +115,26 @@ spec:
               enabled: true
               trigger:
                 schedule: 5 3 * * *
-    mariadb:
-      # The sub-chart doesn't see the parent's credentials, so it gets its own copy
-      credentials:
-        s3:
-          type: s3
-      persistence:
-        data:
-          volsync:
-            - name: b2
-              type: restic
-              credentials: s3
-              dest:
-                enabled: true
-              src:
-                enabled: true
-                trigger:
-                  schedule: 12 3 * * *
+    dependencies:
+      mariadb:
+        persistence:
+          # Fresh volume for the new MariaDB 11.8 (data restored from a dump); the old Bitnami
+          # volume (wordpress-mariadb-data, MariaDB 13.1 layout) can't be reused
+          data:
+            enabled: false
+          db:
+            enabled: true
+            mountPath: /config
+            volsync:
+              - name: b2
+                type: restic
+                credentials: s3
+                dest:
+                  enabled: true
+                src:
+                  enabled: true
+                  trigger:
+                    schedule: 12 3 * * *
     ingress:
       main:
         enabled: true
