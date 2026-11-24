@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 21.3.8
+      version: 22.0.0
       sourceRef:
         kind: HelmRepository
         name: truecharts
@@ -44,7 +44,7 @@ spec:
     - kind: Secret
       name: lychee-values
       valuesKey: LYCHEE_CNPG_PWD
-      targetPath: cnpg.main.password
+      targetPath: dependencies.postgresql.depconfig.password
   values:
     TZ: Europe/Brussels
     image:
@@ -79,15 +79,17 @@ spec:
                 DB_CONNECTION: pgsql
                 DB_HOST:
                   secretKeyRef:
-                    name: cnpg-main-urls
-                    key: host
+                    expandObjectName: false
+                    name: '{{ printf "%s-%s" .Release.Name "postgresqlcreds" }}'
+                    key: plainhost
                 DB_PORT: "5432"
                 DB_DATABASE: lychee
                 DB_USERNAME: lychee
                 DB_PASSWORD:
                   secretKeyRef:
-                    name: cnpg-main-user
-                    key: password
+                    expandObjectName: false
+                    name: '{{ printf "%s-%s" .Release.Name "postgresqlcreds" }}'
+                    key: postgresql-password
                 # Skips the recursive chown/chmod of the NFS uploads on every start
                 SKIP_PERMISSIONS_CHECKS: "yes"
                 # Default 30 s cut big album deletes off midway, leaving the files behind
@@ -140,12 +142,14 @@ spec:
                     key: LYCHEE_TOKEN
                 DB_HOST:
                   secretKeyRef:
-                    name: cnpg-main-urls
-                    key: host
+                    expandObjectName: false
+                    name: '{{ printf "%s-%s" .Release.Name "postgresqlcreds" }}'
+                    key: plainhost
                 DB_PASSWORD:
                   secretKeyRef:
-                    name: cnpg-main-user
-                    key: password
+                    expandObjectName: false
+                    name: '{{ printf "%s-%s" .Release.Name "postgresqlcreds" }}'
+                    key: postgresql-password
                 MAX_EDGE: "3840"
                 JPEG_QUALITY: "85"
                 MAX_FILE_MB: "2048"
@@ -376,31 +380,40 @@ spec:
             paths:
               - path: /
                 pathType: Prefix
-    cnpg:
-      main:
+    dependencies:
+      postgresql:
         enabled: true
-        user: lychee
-        database: lychee
-        #mode: recovery
-        cluster:
-          singleNode: true
-          instances: 1
-          # botocore retry settings: B2 503s on backup uploads (default: 4 retries)
-          env:
-            AWS_RETRY_MODE: standard
-            AWS_MAX_ATTEMPTS: "10"
-        backups:
-          enabled: true
-          credentials: s3
-          scheduledBackups:
-            - name: daily-backup
-              schedule: "0 45 0 * * *"
-              backupOwnerReference: self
-              immediate: true
-              suspend: false
-          revision: "1"
-          retentionPolicy: "7d"
-        recovery:
-          method: object_store
-          credentials: s3
-          revision: "1"
+        depconfig:
+          postgresqlUsername: lychee
+          postgresqlDatabase: lychee
+        operator:
+          # Pinned: the chart default is 18; upgrading is a separate step
+          pgVersion: 16
+          cluster:
+            singleNode: true
+            # One Postgres pod instead of the chart's two: a replica on the same node adds
+            # no availability, and the nightly backup to S3 covers the data.
+            instances: 1
+          #mode: recovery
+          backups:
+            enabled: true
+            credentials: s3
+            scheduledBackups:
+              - name: daily-backup
+                schedule: "0 45 0 * * *"
+                backupOwnerReference: self
+                immediate: true
+                suspend: false
+            revision: "2"
+            retentionPolicy: "7d"
+            # botocore retry settings in the Barman sidecar: B2 503s on backup uploads (default: 4 retries)
+            instanceSidecarConfiguration:
+              env:
+                - name: AWS_RETRY_MODE
+                  value: standard
+                - name: AWS_MAX_ATTEMPTS
+                  value: "10"
+          recovery:
+            method: object_store
+            credentials: s3
+            revision: "1"
