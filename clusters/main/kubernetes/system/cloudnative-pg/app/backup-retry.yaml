@@ -85,9 +85,12 @@ spec:
                   rc=0
                   for c in $failed; do
                     ns=$(echo "$c" | cut -d/ -f1); cl=$(echo "$c" | cut -d/ -f2); ok=""
+                    # Clusters migrated to the Barman Cloud plugin need method plugin
+                    method="method: barmanObjectStore"
+                    kubectl get clusters.postgresql.cnpg.io -n "$ns" "$cl" -o jsonpath='{.spec.plugins[*].name}' | grep -q barman-cloud.cloudnative-pg.io && method="method: plugin, pluginConfiguration: {name: barman-cloud.cloudnative-pg.io}"
                     for n in 1 2 3; do
                       name="$cl-retry-$(date -u +%Y%m%d%H%M)"
-                      printf 'apiVersion: postgresql.cnpg.io/v1\nkind: Backup\nmetadata: {name: %s, namespace: %s}\nspec: {cluster: {name: %s}, method: barmanObjectStore}\n' "$name" "$ns" "$cl" | kubectl create -f - 2>/dev/null || { echo "$c: create failed"; break; }
+                      printf 'apiVersion: postgresql.cnpg.io/v1\nkind: Backup\nmetadata: {name: %s, namespace: %s}\nspec: {cluster: {name: %s}, %s}\n' "$name" "$ns" "$cl" "$method" | kubectl create -f - 2>/dev/null || { echo "$c: create failed"; break; }
                       phase=timeout
                       for i in $(seq 1 90); do
                         sleep 10
