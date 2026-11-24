@@ -1,15 +1,16 @@
 ---
-# Redis only accepts blocky's pods
+# Valkey only accepts blocky's pods
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: blocky-redis
+  name: blocky-valkey
   namespace: blocky
 spec:
   podSelector:
     matchLabels:
       app.kubernetes.io/instance: blocky
-      app.kubernetes.io/name: redis
+      app.kubernetes.io/name: blocky
+      pod.name: valkey-main
   policyTypes:
     - Ingress
   ingress:
@@ -21,7 +22,7 @@ spec:
         - protocol: TCP
           port: 6379
 ---
-# Blocky + k8s_gateway: outgoing only to its Redis, DNS and the public internet (upstream resolvers, blocklist
+# Blocky + k8s_gateway: outgoing only to its Valkey, DNS and the public internet (upstream resolvers, blocklist
 # downloads); no LAN, no other apps. The k8s_gateway's Kubernetes API access is in blocky-kube-api below.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -41,7 +42,8 @@ spec:
         - podSelector:
             matchLabels:
               app.kubernetes.io/instance: blocky
-              app.kubernetes.io/name: redis
+              app.kubernetes.io/name: blocky
+              pod.name: valkey-main
       ports:
         - protocol: TCP
           port: 6379
