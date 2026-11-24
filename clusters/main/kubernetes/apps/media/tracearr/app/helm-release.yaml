@@ -10,7 +10,7 @@ spec:
   chart:
     spec:
       chart: app-template
-      version: 21.3.8
+      version: 22.0.0
       sourceRef:
         kind: HelmRepository
         name: truecharts
@@ -48,11 +48,11 @@ spec:
     - kind: Secret
       name: tracearr-values
       valuesKey: TRACEARR_CNPG_PWD
-      targetPath: cnpg.main.password
+      targetPath: dependencies.postgresql.depconfig.password
     - kind: Secret
       name: tracearr-values
       valuesKey: TRACEARR_REDIS_PWD
-      targetPath: redis.password
+      targetPath: dependencies.valkey.depconfig.password
   values:
     global:
       stopAll: false    
@@ -85,16 +85,18 @@ spec:
                 HOST: 0.0.0.0
                 DATABASE_URL:
                   secretKeyRef:
-                    name: cnpg-main-urls
-                    key: std
+                    expandObjectName: false
+                    name: '{{ printf "%s-%s" .Release.Name "postgresqlcreds" }}'
+                    key: url
                 DB_PASSWORD:
                   secretKeyRef:
-                    name: cnpg-main-user
-                    key: password
+                    expandObjectName: false
+                    name: '{{ printf "%s-%s" .Release.Name "postgresqlcreds" }}'
+                    key: postgresql-password
                 REDIS_URL:
                   secretKeyRef:
                     expandObjectName: false
-                    name: '{{ printf "%s-%s" .Release.Name "rediscreds" }}'
+                    name: '{{ printf "%s-%s" .Release.Name "valkeycreds" }}'
                     key: url
                 CORS_ORIGIN: "{{ .Values.chartContext.appUrl }}"
     ingress:
@@ -122,36 +124,42 @@ spec:
               paths:
                 - path: /
                   pathType: Prefix   
-    cnpg:
-      main:
+    dependencies:
+      postgresql:
         enabled: true
-        user: tracearr
-        database: tracearr
-        #mode: recovery
-        cluster:
-          singleNode: true
-          # One Postgres pod instead of the chart's two: a replica on the same node adds
-          # no availability, and the nightly backup to S3 covers the data.
-          instances: 1
-          # botocore retry settings: B2 503s on backup uploads (default: 4 retries)
-          env:
-            AWS_RETRY_MODE: standard
-            AWS_MAX_ATTEMPTS: "10"
-        backups:
-          enabled: true
-          credentials: s3
-          scheduledBackups:
-            - name: daily-backup
-              schedule: "0 44 2 * * *"
-              backupOwnerReference: self
-              immediate: true
-              suspend: false
-          revision: "5"
-          retentionPolicy: "7d"
-        recovery:
-          method: object_store
-          credentials: s3
-          revision: "4"  
-
-    redis:
-      enabled: true
+        depconfig:
+          postgresqlUsername: tracearr
+          postgresqlDatabase: tracearr
+        operator:
+          # Pinned: the chart default is 18; upgrading is a separate step
+          pgVersion: 16
+          cluster:
+            singleNode: true
+            # One Postgres pod instead of the chart's two: a replica on the same node adds
+            # no availability, and the nightly backup to S3 covers the data.
+            instances: 1
+          #mode: recovery
+          backups:
+            enabled: true
+            credentials: s3
+            scheduledBackups:
+              - name: daily-backup
+                schedule: "0 44 2 * * *"
+                backupOwnerReference: self
+                immediate: true
+                suspend: false
+            revision: "6"
+            retentionPolicy: "7d"
+            # botocore retry settings in the Barman sidecar: B2 503s on backup uploads (default: 4 retries)
+            instanceSidecarConfiguration:
+              env:
+                - name: AWS_RETRY_MODE
+                  value: standard
+                - name: AWS_MAX_ATTEMPTS
+                  value: "10"
+          recovery:
+            method: object_store
+            credentials: s3
+            revision: "5"
+      valkey:
+        enabled: true
