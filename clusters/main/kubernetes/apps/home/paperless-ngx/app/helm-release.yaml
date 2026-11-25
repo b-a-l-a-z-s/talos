@@ -83,8 +83,7 @@ spec:
     dependencies:
       postgresql:
         operator:
-          # Pinned: the chart default is 18; upgrading is a separate step
-          pgVersion: 16
+          pgVersion: 18
           cluster:
             singleNode: true
             # One Postgres pod instead of the chart's two: a replica on the same node adds
@@ -100,7 +99,7 @@ spec:
                 backupOwnerReference: self
                 immediate: true
                 suspend: false
-            revision: "1"
+            revision: "2"
             retentionPolicy: "7d"
             # botocore retry settings in the Barman sidecar: B2 503s on backup uploads (default: 4 retries)
             instanceSidecarConfiguration:
@@ -112,7 +111,7 @@ spec:
           recovery:
             method: object_store
             credentials: s3
-            revision: "0"
+            revision: "1"
     tika:
       enabled: true
     workload:
