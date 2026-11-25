@@ -4,7 +4,7 @@ resources:
   - system-upgrade
   - cert-manager/ks.yaml
   - cloudnative-pg/ks.yaml
-  # CNPG backups to S3 once databases leave spec.backup.barmanObjectStore (common-2026, CNPG 1.32)
+  # CNPG backups to S3 (all clusters use the Barman Cloud plugin since common-2026)
   - plugin-barman-cloud/ks.yaml
   - kubernetes-reflector/ks.yaml
   - longhorn/ks.yaml

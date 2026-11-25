@@ -1,7 +1,6 @@
 ---
 # yaml-language-server: $schema=https://kubernetes-schemas.pages.dev/monitoring.coreos.com/prometheusrule_v1.json
-# CNPG database backups and WAL archiving to B2 (metrics from podmonitor-cnpg.yaml): in-core
-# cnpg_collector_* or, after the Barman Cloud Plugin migration, barman_cloud_cloudnative_pg_io_*.
+# CNPG database backups (Barman Cloud plugin metrics) and WAL archiving to B2 (podmonitor-cnpg.yaml).
 # warning goes to the backup Discord channel (alertmanagerconfig.yaml).
 apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
@@ -14,7 +13,7 @@ spec:
       rules:
         # Clears itself after the next successful backup
         - alert: CNPGBackupFailed
-          expr: max by (namespace) ({__name__=~"cnpg_collector_last_failed_backup_timestamp|barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp"}) > max by (namespace) ({__name__=~"cnpg_collector_last_available_backup_timestamp|barman_cloud_cloudnative_pg_io_last_available_backup_timestamp"})
+          expr: max by (namespace) (barman_cloud_cloudnative_pg_io_last_failed_backup_timestamp) > max by (namespace) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp)
           for: 5m
           labels:
             severity: warning
@@ -25,7 +24,7 @@ spec:
               Check its Backup object and the instance pod log. WAL archiving still covers point-in-time restores.
 
         - alert: CNPGBackupTooOld
-          expr: time() - max by (namespace) ({__name__=~"cnpg_collector_last_available_backup_timestamp|barman_cloud_cloudnative_pg_io_last_available_backup_timestamp"}) > 26 * 3600
+          expr: time() - max by (namespace) (barman_cloud_cloudnative_pg_io_last_available_backup_timestamp) > 26 * 3600
           for: 30m
           labels:
             severity: warning
@@ -47,7 +46,7 @@ spec:
               so point-in-time restores stop advancing and WAL piles up on the volume.
 
         - alert: CNPGMetricsAbsent
-          expr: absent({__name__=~"cnpg_collector_last_available_backup_timestamp|barman_cloud_cloudnative_pg_io_last_available_backup_timestamp"})
+          expr: absent(barman_cloud_cloudnative_pg_io_last_available_backup_timestamp)
           for: 30m
           labels:
             severity: warning
