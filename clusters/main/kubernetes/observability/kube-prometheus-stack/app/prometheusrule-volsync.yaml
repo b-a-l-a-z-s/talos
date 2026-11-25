@@ -47,7 +47,8 @@ spec:
               still running (normal runs take minutes). Check the mover pod.
 
         - alert: VolSyncNoRecentBackup
-          expr: sum by (obj_namespace, obj_name) (increase(volsync_sync_duration_seconds_count{role="source"}[26h])) == 0
+          # The "and" skips sources that no longer exist (their old series stays in the 26h window)
+          expr: sum by (obj_namespace, obj_name) (increase(volsync_sync_duration_seconds_count{role="source"}[26h])) == 0 and on (obj_namespace, obj_name) volsync_sync_duration_seconds_count{role="source"}
           for: 15m
           labels:
             severity: warning
